@@ -1,0 +1,37 @@
+# Build system artifacts
+build/
+install/
+log/
+ 
+# Generated files
+*.o
+*.obj
+*.so
+*.a
+*.lib
+*.dll
+*.exe
+*.out
+
+# URDF / xacro generated files
+*.urdf
+*.urdf.xacro~
+
+# CMake / colcon
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+colcon.meta
+.colcon/
+
+# IDE / Editor files
+.vscode/
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv/

@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>rudy_description</name>
+  <version>0.1.0</version>
+  <description>This package contains URDF files and basic code for testing, debugging, and visualization of the Rudy robot.</description>
+  <maintainer email="nolanknight2026@u.northwestern.edu">Nolan Knight</maintainer>
+  <license>Apache License 2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Test Depends: -->
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_xmllint</test_depend>
+  <test_depend>launch_testing_ros</test_depend>
+
+  <!-- Exec Depends from Launch -->
+  <exec_depend>ros2launch</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>joint_state_publisher</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+  <exec_depend>xacro</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

@@ -1,0 +1,500 @@
+<?xml version="1.0"?>
+<robot name="rudy" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <!--Load in the Xacros created to establish the colors of the rudy-->
+    <xacro:include filename="$(find rudy_description)/urdf/common_properties.urdf.xacro"/>
+    
+    <!-- Define color property from Launch File to set the color and namespace -->
+    <xacro:arg name="color" default="purple"/> 
+    <xacro:property name="color" value="$(arg color)"/>
+
+    <!-- Use the Xacros to build the URDF-->
+    <link name="base_footprint"/>
+
+    <!-- Set the BaseLink -->
+    <link name="base_link">
+        <visual>
+        <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Body_Link.stl"/>
+        </geometry>
+        <material name="${color}"/>
+        </visual>
+
+        <!-- Origin Offset for Collision to counteract stl frame shift -->
+        <collision>
+        <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Body_Link_Collision.stl"/>
+        </geometry>
+        </collision>
+
+        <!-- to do Update Mass with assembled body hull mass -->
+        <inertial>
+            <!-- COM relative to link origin with shift to align -->
+        <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+        <mass value="0.846"/>  
+            <!--  Inertia about COM -->
+        <inertia ixx="0.005" ixy="3.724e-06" ixz="7.987e-07" iyx="3.724e-06" iyy="0.006" iyz="-8.377e-05" izx="7.987e-07" izy="-8.377e-05" izz="0.002" />
+        </inertial>
+    </link>
+
+    <!-- Connect the footprint to the base_link -->
+    <joint name="base_joint" type="fixed">
+        <parent link="base_footprint"/>
+        <child link="base_link"/>
+        <origin xyz="0.0 0.0 0.1" rpy="0 0 0"/>
+    </joint>
+
+    <!-- Set the left front hip motor link:-->
+    <link name="front_left_hip_motor_link">
+        <visual>
+        <origin xyz="-0.01 0 0" rpy="0 0 0"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Dual_Motor.stl"/>
+        </geometry>
+        <material name="dark"/>
+        </visual>
+
+        <collision>
+        <origin xyz="-0.01 0 0" rpy="0 0 0"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Dual_Motor_Collision.stl"/>
+        </geometry>
+        </collision>
+
+        <inertial>
+        <origin xyz="0 0 0" />
+        <mass value="0.045" />
+        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        </inertial>
+    </link>
+
+    <!-- Set the left front hip motor:-->
+    <joint name="front_left_hip_abduct_joint" type="continuous">
+        <parent link="base_link"/>
+        <child link="front_left_hip_motor_link"/>
+        <origin xyz="-0.08 -0.07 0.036" rpy="0 -1.57 0"/>
+        <axis xyz="0 1 0"/>
+    </joint>
+
+    <!-- Set the right front hip motor link:-->
+    <link name="front_right_hip_motor_link">
+        <visual>
+        <origin xyz="-0.01 0 0" rpy="0 0 0"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Dual_Motor.stl"/>
+        </geometry>
+        <material name="dark"/>
+        </visual>
+
+        <collision>
+        <origin xyz="-0.01 0 0" rpy="0 0 0"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Dual_Motor_Collision.stl"/>
+        </geometry>
+        </collision>
+
+        <inertial>
+        <origin xyz="0 0 0" />
+        <mass value="0.045" />
+        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        </inertial>
+    </link>
+
+    <!-- Set the right front hip motor:-->
+    <joint name="front_right_hip_abduct_joint" type="continuous">
+        <parent link="base_link"/>
+        <child link="front_right_hip_motor_link"/>
+        <origin xyz="0.08 -0.07 0.036" rpy="0 -1.57 0"/>
+        <axis xyz="0 1 0"/>
+    </joint>
+    
+    <!-- Set the Right Back hip motor link:-->
+    <link name="back_right_hip_motor_link">
+        <visual>
+        <origin xyz="-0.01 0 0.0" rpy="0 0 0"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Dual_Motor.stl"/>
+        </geometry>
+        <material name="dark"/>
+        </visual>
+
+        <collision>
+        <origin xyz="-0.01 0 0.0" rpy="0 0 0"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Dual_Motor_Collision.stl"/>
+        </geometry>
+        </collision>
+
+        <inertial>
+        <origin xyz="0 0 0" />
+        <mass value="0.045" />
+        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        </inertial>
+    </link>
+
+    <!-- Set the right back hip motor:-->
+    <joint name="back_right_hip_abduct_joint" type="continuous">
+        <parent link="base_link"/>
+        <child link="back_right_hip_motor_link"/>
+        <origin xyz="0.08 0.0725 0.036" rpy="0 -1.57 0"/>
+        <axis xyz="0 1 0"/>
+    </joint>
+
+    <!-- Set the Left Back hip motor link:-->
+    <link name="back_left_hip_motor_link">
+        <visual>
+        <origin xyz="-0.01 0 0.0" rpy="0 0 0"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Dual_Motor.stl"/>
+        </geometry>
+        <material name="dark"/>
+        </visual>
+
+        <collision>
+        <origin xyz="-0.01 0 0.0" rpy="0 0 0"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Dual_Motor_Collision.stl"/>
+        </geometry>
+        </collision>
+
+        <inertial>
+        <origin xyz="0 0 0" />
+        <mass value="0.045" />
+        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        </inertial>
+    </link>
+
+    <!-- Set the Left back hip motor:-->
+    <joint name="back_left_hip_abduct_joint" type="continuous">
+        <parent link="base_link"/>
+        <child link="back_left_hip_motor_link"/>
+        <origin xyz="-0.08 0.0725 0.036" rpy="0 -1.57 0"/>
+        <axis xyz="0 1 0"/>
+    </joint>
+
+    <!-- Set the left front hip link:-->
+    <link name="front_left_hip_link">
+        <visual>
+        <origin xyz="-0.0825 0 -0.0235" rpy="0 -1.57 -3.14"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Hip_Link.stl"/>
+        </geometry>
+        <material name="black"/>
+        </visual>
+
+        <collision>
+        <origin xyz="-0.0825 0 -0.0235" rpy="0 -1.57 -3.14"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Hip_Link_Collision.stl"/>
+        </geometry>
+        </collision>
+
+        <inertial>
+        <origin xyz="0 0 0" />
+        <mass value="0.045" />
+        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        </inertial>
+    </link>
+
+    <!-- Set the left front hip joint:-->
+    <joint name="front_left_hip_flexion_joint" type="continuous">
+        <parent link="front_left_hip_motor_link"/>
+        <child link="front_left_hip_link"/>
+        <origin xyz="-0.0225 0.0 0.0" rpy="0 0 0"/>
+        <axis xyz="0 0 1"/>
+    </joint>
+
+    <!-- Set the left back hip link:-->
+    <link name="back_left_hip_link">
+        <visual>
+        <origin xyz="-0.0825 0 -0.0235" rpy="0 -1.57 -3.14"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Hip_Link.stl"/>
+        </geometry>
+        <material name="black"/>
+        </visual>
+
+        <collision>
+        <origin xyz="-0.0825 0 -0.0235" rpy="0 -1.57 -3.14"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Hip_Link_Collision.stl"/>
+        </geometry>
+        </collision>
+
+        <inertial>
+        <origin xyz="0 0 0" />
+        <mass value="0.045" />
+        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        </inertial>
+    </link>
+
+    <!-- Set the left back hip joint:-->
+    <joint name="back_left_hip_flexion_joint" type="continuous">
+        <parent link="back_left_hip_motor_link"/>
+        <child link="back_left_hip_link"/>
+        <origin xyz="-0.0225 0.0 0.0" rpy="0 0 0"/>
+        <axis xyz="0 0 1"/>
+    </joint>
+
+    <!-- Set the right front hip link:-->
+    <link name="front_right_hip_link">
+        <visual>
+        <origin xyz="-0.0825 0 0.0235" rpy="0 1.57 0"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Hip_Link.stl"/>
+        </geometry>
+        <material name="black"/>
+        </visual>
+
+        <collision>
+        <origin xyz="-0.0825 0 0.0235" rpy="0 1.57 0"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Hip_Link_Collision.stl"/>
+        </geometry>
+        </collision>
+
+        <inertial>
+        <origin xyz="0 0 0" />
+        <mass value="0.045" />
+        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        </inertial>
+    </link>
+
+    <!-- Set the right front hip joint:-->
+    <joint name="front_right_hip_flexion_joint" type="continuous">
+        <parent link="front_right_hip_motor_link"/>
+        <child link="front_right_hip_link"/>
+        <origin xyz="-0.0225 0.0 0.0" rpy="0 0 0"/>
+        <axis xyz="0 0 1"/>
+    </joint>
+
+    <!-- Set the right back hip link:-->
+    <link name="back_right_hip_link">
+        <visual>
+        <origin xyz="-0.0825 0 0.0235" rpy="0 1.57 0"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Hip_Link.stl"/>
+        </geometry>
+        <material name="black"/>
+        </visual>
+
+        <collision>
+        <origin xyz="-0.0825 0 0.0235" rpy="0 1.57 0"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Hip_Link_Collision.stl"/>
+        </geometry>
+        </collision>
+
+        <inertial>
+        <origin xyz="0 0 0" />
+        <mass value="0.045" />
+        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        </inertial>
+    </link>
+
+    <!-- Set the right back hip joint:-->
+    <joint name="back_right_hip_flexion_joint" type="continuous">
+        <parent link="back_right_hip_motor_link"/>
+        <child link="back_right_hip_link"/>
+        <origin xyz="-0.0225 0.0 0.0" rpy="0 0 0"/>
+        <axis xyz="0 0 1"/>
+    </joint>
+
+ <!-- Set the left front Foot link:-->
+    <link name="front_left_Foot_link">
+        <visual>
+        <origin xyz="-0.0275 0.001 0" rpy="-1.57 0 1.57"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Foot_Link.stl"/>
+        </geometry>
+        <material name="black"/>
+        </visual>
+
+        <collision>
+        <origin xyz="-0.0275 0.001 0" rpy="-1.57 0 1.57"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Foot_Link_Collision.stl"/>
+        </geometry>
+        </collision>
+
+        <inertial>
+        <origin xyz="0 0 0" />
+        <mass value="0.045" />
+        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        </inertial>
+    </link>
+
+    <!-- Set the left front Knee joint:-->
+    <joint name="front_left_knee_flexion_joint" type="continuous">
+        <parent link="front_left_hip_link"/>
+        <child link="front_left_Foot_link"/>
+        <origin xyz="-0.0775 0.0 0.0" rpy="0 0 0"/>
+        <axis xyz="0 0 1"/>
+    </joint>
+
+     <!-- Set the left back Foot link:-->
+    <link name="back_left_Foot_link">
+        <visual>
+        <origin xyz="-0.0275 0.001 0" rpy="-1.57 0 1.57"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Foot_Link.stl"/>
+        </geometry>
+        <material name="black"/>
+        </visual>
+
+        <collision>
+        <origin xyz="-0.0275 0.001 0" rpy="-1.57 0 1.57"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Foot_Link_Collision.stl"/>
+        </geometry>
+        </collision>
+
+        <inertial>
+        <origin xyz="0 0 0" />
+        <mass value="0.045" />
+        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        </inertial>
+    </link>
+
+    <!-- Set the left back Knee joint:-->
+    <joint name="back_left_knee_flexion_joint" type="continuous">
+        <parent link="back_left_hip_link"/>
+        <child link="back_left_Foot_link"/>
+        <origin xyz="-0.0775 0.0 0.0" rpy="0 0 0"/>
+        <axis xyz="0 0 1"/>
+    </joint>
+
+
+    <!-- Set the right front Foot link:-->
+    <link name="front_right_Foot_link">
+        <visual>
+        <origin xyz="-0.0275 0.001 0" rpy="-1.57 0 1.57"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Foot_Link.stl"/>
+        </geometry>
+        <material name="black"/>
+        </visual>
+
+        <collision>
+        <origin xyz="-0.0275 0.001 0" rpy="-1.57 0 1.57"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Foot_Link_Collision.stl"/>
+        </geometry>
+        </collision>
+
+        <inertial>
+        <origin xyz="0 0 0" />
+        <mass value="0.045" />
+        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        </inertial>
+    </link>
+
+    <!-- Set the right front Knee joint:-->
+    <joint name="front_right_knee_flexion_joint" type="continuous">
+        <parent link="front_right_hip_link"/>
+        <child link="front_right_Foot_link"/>
+        <origin xyz="-0.0775 0.0 0.0" rpy="0 0 0"/>
+        <axis xyz="0 0 1"/>
+    </joint>
+
+    <!-- Set the right back Foot link:-->
+    <link name="back_right_Foot_link">
+        <visual>
+        <origin xyz="-0.0275 0.001 0" rpy="-1.57 0 1.57"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Foot_Link.stl"/>
+        </geometry>
+        <material name="black"/>
+        </visual>
+
+        <collision>
+        <origin xyz="-0.0275 0.001 0" rpy="-1.57 0 1.57"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Foot_Link_Collision.stl"/>
+        </geometry>
+        </collision>
+
+        <inertial>
+        <origin xyz="0 0 0" />
+        <mass value="0.045" />
+        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        </inertial>
+    </link>
+
+    <!-- Set the right back Knee joint:-->
+    <joint name="back_right_knee_flexion_joint" type="continuous">
+        <parent link="back_right_hip_link"/>
+        <child link="back_right_Foot_link"/>
+        <origin xyz="-0.0775 0.0 0.0" rpy="0 0 0"/>
+        <axis xyz="0 0 1"/>
+    </joint>
+
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+    <!-- If you decide to attach a mounted head to this model, do so here -->
+    <!-- Set the head motor link:-->
+    <link name="head_motor_link">
+        <visual>
+        <origin xyz="0 -0.01 0" rpy="0 0 -1.57"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Dual_Motor.stl"/>
+        </geometry>
+        <material name="dark"/>
+        </visual>
+
+        <collision>
+        <origin xyz="0 -0.01 0" rpy="0 0 -1.57"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Dual_Motor_Collision.stl"/>
+        </geometry>
+        </collision>
+
+        <inertial>
+        <origin xyz="0 0 0" />
+        <mass value="0.045" />
+        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        </inertial>
+    </link>
+
+    <!-- Set the head lift joint:-->
+    <joint name="head_lift_motor_joint" type="continuous">
+        <parent link="base_link"/>
+        <child link="head_motor_link"/>
+        <origin xyz="0.0 -0.12825 0.06" rpy="0 -1.57 0"/>
+        <axis xyz="0 0 1"/>
+    </joint>
+
+
+    <!-- Set the head link:-->
+    <link name="head_link">
+        <visual>
+        <origin xyz="-0.01 -0.0275 0" rpy="-1.57 0 -3.14"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Head_Link.stl"/>
+        </geometry>
+        <material name="purple"/>
+        </visual>
+
+        <collision>
+        <origin xyz="-0.01 -0.0275 0" rpy="-1.57 0 -3.14"/>
+        <geometry>
+            <mesh filename="package://rudy_description/meshes/Head_Link_Collision.stl"/>
+        </geometry>
+        </collision>
+
+        <inertial>
+        <origin xyz="0 0 0" />
+        <mass value="0.045" />
+        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        </inertial>
+    </link>
+
+    <!-- Set the Head swiveljoint:-->
+    <joint name="head_swivel_joint" type="continuous">
+        <parent link="head_motor_link"/>
+        <child link="head_link"/>
+        <origin xyz="0 -0.0225 0" rpy="0 0 0"/>
+        <axis xyz="1 0 0"/>
+    </joint>
+
+</robot>

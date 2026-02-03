@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Arguement to launch Rviz -->
+  <arg name="use_rviz" default="true" 
+    description="The user can control whether Rudy is shown in Rviz or not at launch."/>
+  <!-- Arguement to launch default joint state -->
+  <arg name="use_jsp" default="true" 
+    description="The joint state publisher can be true or false. If true, the joint state publisher will launch default joint states"/>
+  <!-- Arguement to launch specific robot color and namespace -->
+  <arg name="color" default="purple" 
+    description="Set the base_Link color of the robot">
+    <choice value="purple" />
+    <choice value="blue" />
+    <choice value="black" />
+    <choice value="grey" />
+    <choice value="brown" />
+    <choice value="white" />
+  </arg>
+    
+  <!-- Set the namespace for all nodes -->
+  <group>
+    <!-- push_ros_namespace to set namespace of included nodes -->
+    <push_ros_namespace namespace="$(var color)" />
+
+    <!-- Robot state publisher -->
+    <node pkg="robot_state_publisher" exec="robot_state_publisher">
+      <param name="robot_description" value="$(command '$(exec-in-pkg xacro xacro) $(find-pkg-share rudy_description)/urdf/rudy_us.urdf.xacro color:=$(var color)')"/>
+      <param name="frame_prefix" value='$(var color)/'/>
+    </node>
+
+    <!-- Joint state publisher -->
+    <node pkg="joint_state_publisher" exec="joint_state_publisher" if="$(eval '\'$(var use_jsp)\'==\'true\'')"/>
+
+    <!-- Joint state publisher GUI -->
+    <node pkg="joint_state_publisher_gui" exec="joint_state_publisher_gui" if="$(eval '\'$(var use_jsp)\'==\'false\'')"/>
+
+    <!-- RViz - If RViz is launched and closed, the launchfile will terminate-->
+    <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share rudy_description)/config/load_$(var color)_rudy.rviz" if="$(eval '\'$(var use_rviz)\'==\'true\'')" on_exit="shutdown"/>
+  </group>
+</launch>
