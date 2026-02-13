@@ -21,8 +21,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rcutils/cmdline_parser.h"
 #include "dynamixel_sdk/dynamixel_sdk.h"
-#include "dynamixel_sdk_custom_interfaces/msg/set_position.hpp"
-#include "dynamixel_sdk_custom_interfaces/srv/get_position.hpp"
 
 // Control table address for X series
 #define ADDR_PRESENT_POSITION 132
@@ -33,9 +31,6 @@
 // USB Connection Settings:
 #define BAUDRATE 57600  // Default Baudrate of DYNAMIXEL X series
 #define DEVICE_NAME "/dev/ttyUSB0"  // [Linux]: "/dev/ttyUSB*", [Windows]: "COM*"
-
-
-using GetPosition = dynamixel_sdk_custom_interfaces::srv::GetPosition;
 
 class CalibrateNode : public rclcpp::Node {
 public:

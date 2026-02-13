@@ -9,14 +9,12 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rcutils REQUIRED)
-find_package(dynamixel_sdk REQUIRED)
-find_package(dynamixel_sdk_custom_interfaces REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(dynamixel_sdk REQUIRED)
 
 # Link Libraries:
 add_executable(calibration_node src/calibrate.cpp)
 target_link_libraries(calibration_node PUBLIC
-  ${dynamixel_sdk_custom_interfaces_TARGETS}
   rclcpp::rclcpp
   dynamixel_sdk::dynamixel_sdk
   yaml-cpp::yaml-cpp
