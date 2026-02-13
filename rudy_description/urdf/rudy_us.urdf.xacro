@@ -64,8 +64,8 @@
 
         <inertial>
         <origin xyz="0 0 0" />
-        <mass value="0.045" />
-        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        <mass value="0.1" />
+        <inertia ixx="0.0" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="0.0" />
         </inertial>
     </link>
 
@@ -96,8 +96,8 @@
 
         <inertial>
         <origin xyz="0 0 0" />
-        <mass value="0.045" />
-        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        <mass value="0.1" />
+        <inertia ixx="0.0" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="0.0" />
         </inertial>
     </link>
 
@@ -128,8 +128,8 @@
 
         <inertial>
         <origin xyz="0 0 0" />
-        <mass value="0.045" />
-        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        <mass value="0.1" />
+        <inertia ixx="0.0" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="0.0" />
         </inertial>
     </link>
 
@@ -160,8 +160,8 @@
 
         <inertial>
         <origin xyz="0 0 0" />
-        <mass value="0.045" />
-        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        <mass value="0.1" />
+        <inertia ixx="0.0" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="0.0" />
         </inertial>
     </link>
 
@@ -192,8 +192,8 @@
 
         <inertial>
         <origin xyz="0 0 0" />
-        <mass value="0.045" />
-        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        <mass value="0.15" />
+        <inertia ixx="6.020e-05" ixy="8.926e-08" ixz="1.687e-08" iyx="8.926e-08" iyy="2.533e-05" iyz="-5.955e-06" izx="1.687e-08" izy="-5.955e-06" izz="5.369e-05" />
         </inertial>
     </link>
 
@@ -224,9 +224,8 @@
 
         <inertial>
         <origin xyz="0 0 0" />
-        <mass value="0.045" />
-        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
-        </inertial>
+        <mass value="0.15" />
+        <inertia ixx="6.020e-05" ixy="8.926e-08" ixz="1.687e-08" iyx="8.926e-08" iyy="2.533e-05" iyz="-5.955e-06" izx="1.687e-08" izy="-5.955e-06" izz="5.369e-05" />        </inertial>
     </link>
 
     <!-- Set the left back hip joint:-->
@@ -256,9 +255,8 @@
 
         <inertial>
         <origin xyz="0 0 0" />
-        <mass value="0.045" />
-        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
-        </inertial>
+        <mass value="0.15" />
+        <inertia ixx="6.020e-05" ixy="8.926e-08" ixz="1.687e-08" iyx="8.926e-08" iyy="2.533e-05" iyz="-5.955e-06" izx="1.687e-08" izy="-5.955e-06" izz="5.369e-05" />        </inertial>
     </link>
 
     <!-- Set the right front hip joint:-->
@@ -288,9 +286,9 @@
 
         <inertial>
         <origin xyz="0 0 0" />
-        <mass value="0.045" />
-        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
-        </inertial>
+        <!-- These will need to be updated on the final build -->
+        <mass value="0.15" />   
+        <inertia ixx="6.020e-05" ixy="8.926e-08" ixz="1.687e-08" iyx="8.926e-08" iyy="2.533e-05" iyz="-5.955e-06" izx="1.687e-08" izy="-5.955e-06" izz="5.369e-05" />        </inertial>
     </link>
 
     <!-- Set the right back hip joint:-->
@@ -320,8 +318,8 @@
 
         <inertial>
         <origin xyz="0 0 0" />
-        <mass value="0.045" />
-        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        <mass value="0.053" />
+        <inertia ixx="5.075e-05" ixy="-1.633e-10" ixz="-2.788e-10" iyx="-1.633e-10" iyy="5.706e-05" iyz="1.569e-09" izx="-2.788e-10" izy="1.569e-09" izz="1.162e-05" />
         </inertial>
     </link>
 
@@ -352,9 +350,8 @@
 
         <inertial>
         <origin xyz="0 0 0" />
-        <mass value="0.045" />
-        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
-        </inertial>
+        <mass value="0.053" />
+        <inertia ixx="5.075e-05" ixy="-1.633e-10" ixz="-2.788e-10" iyx="-1.633e-10" iyy="5.706e-05" iyz="1.569e-09" izx="-2.788e-10" izy="1.569e-09" izz="1.162e-05" />        </inertial>
     </link>
 
     <!-- Set the left back Knee joint:-->
@@ -385,9 +382,8 @@
 
         <inertial>
         <origin xyz="0 0 0" />
-        <mass value="0.045" />
-        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
-        </inertial>
+        <mass value="0.053" />
+        <inertia ixx="5.075e-05" ixy="-1.633e-10" ixz="-2.788e-10" iyx="-1.633e-10" iyy="5.706e-05" iyz="1.569e-09" izx="-2.788e-10" izy="1.569e-09" izz="1.162e-05" />        </inertial>
     </link>
 
     <!-- Set the right front Knee joint:-->
@@ -417,9 +413,8 @@
 
         <inertial>
         <origin xyz="0 0 0" />
-        <mass value="0.045" />
-        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
-        </inertial>
+        <mass value="0.053" />
+        <inertia ixx="5.075e-05" ixy="-1.633e-10" ixz="-2.788e-10" iyx="-1.633e-10" iyy="5.706e-05" iyz="1.569e-09" izx="-2.788e-10" izy="1.569e-09" izz="1.162e-05" />        </inertial>
     </link>
 
     <!-- Set the right back Knee joint:-->
@@ -451,8 +446,8 @@
 
         <inertial>
         <origin xyz="0 0 0" />
-        <mass value="0.045" />
-        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        <mass value="0.1" />
+        <inertia ixx="0.0" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="0.0" />
         </inertial>
     </link>
 
@@ -484,8 +479,8 @@
 
         <inertial>
         <origin xyz="0 0 0" />
-        <mass value="0.045" />
-        <inertia ixx="1.0e-05" ixy="1.817e-07" ixz="2.389e-06" iyx="1.817e-07" iyy="9.092e-05" iyz="-1.83e-07" izx="2.389e-06" izy="-1.831e-07" izz="1.0e-05" />
+        <mass value="0.234" />
+        <inertia ixx="0.0" ixy="3.552e-07" ixz="2.919e-07" iyx="3.552e-07" iyy="0.0" iyz="5.278e-05" izx="2.919e-07" izy="5.278e-07" izz="0.0" />
         </inertial>
     </link>
 

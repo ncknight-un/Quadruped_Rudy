@@ -1,0 +1,7 @@
+<?xml version='1.0'?>
+<launch>
+    <!-- Launch the Calibration Node with the motor parameters file -->
+    <node pkg='quadruped_behavior' exec='calibration_node'>
+        <param from = "$(find-pkg-share quadruped_behavior)/config/motor_params.yaml"/>
+    </node>
+</launch>
