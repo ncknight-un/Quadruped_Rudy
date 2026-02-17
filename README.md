@@ -1,6 +1,7 @@
 # 🐾 Meet Rudy!
 
 Executables: 
+
 ~ Calibration: Using calibrate.launch.xml, you can read the encoder positions at a zero'd joint positions to calibrate each motors encoding to a joint position of 0.
 
 ---
