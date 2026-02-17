@@ -45,4 +45,4 @@ Rudy is intended to evolve into a fully capable research and experimentation pla
 - ROS-based robotics architecture  
 - Balance and COM shifting strategies  
 
-This project represents a complete ground-up robotics system — mechanical, electrical, and software — built to deepen expertise in integrated robotic systems design.
+This project represents a complete ground-up robotics system spanning mechanical, electrical, and software design. I chode to do this build to deepen my expertise in integrated robotic systems design.
