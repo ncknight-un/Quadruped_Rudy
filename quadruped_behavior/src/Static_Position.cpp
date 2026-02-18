@@ -29,6 +29,9 @@
 #include "std_srvs/srv/empty.hpp"
 
 // Control table address for X series
+#define ADDR_OPERATING_MODE 11
+#define ADDR_TORQUE_ENABLE 64
+#define ADDR_GOAL_POSITION 116
 #define ADDR_PRESENT_POSITION 132
 
 // Protocol version
@@ -37,6 +40,10 @@
 // USB Connection Settings:
 #define BAUDRATE 57600  // Default Baudrate of DYNAMIXEL X series
 #define DEVICE_NAME "/dev/ttyUSB0"  // [Linux]: "/dev/ttyUSB*", [Windows]: "COM*"
+
+uint8_t dxl_error = 0;
+uint32_t goal_position = 0;
+int dxl_comm_result = COMM_TX_FAIL;
 
 class StaticPositionNode : public rclcpp::Node {
 public:
@@ -59,16 +66,9 @@ public:
         portHandler = dynamixel::PortHandler::getPortHandler(DEVICE_NAME);
         packetHandler = dynamixel::PacketHandler::getPacketHandler(PROTOCOL_VERSION);
 
-        // Open Port and Set Baudrate successfully:
-        if (!portHandler->openPort()) {
-        RCLCPP_FATAL(get_logger(), "Failed to open port");
-        rclcpp::shutdown();
-        return;
-        }
-        if (!portHandler->setBaudRate(BAUDRATE)) {
-        RCLCPP_FATAL(get_logger(), "Failed to set baudrate");
-        rclcpp::shutdown();
-        return;
+        // Open Port and Enable Torque:
+        for (const auto& motor_id: motor_ids_) {
+            setupDynamixel(static_cast<uint8_t>(motor_id));
         }
 
         // Initialize the Services:
@@ -111,6 +111,38 @@ public:
             return static_cast<int32_t>(radians * eticks_per_rad_ / (2 * std::numbers::pi));
         }
 
+        void setupDynamixel(uint8_t dxl_id) {
+            // Use Position Control Mode
+            dxl_comm_result = packetHandler->write1ByteTxRx(
+                portHandler,
+                dxl_id,
+                ADDR_OPERATING_MODE,
+                3,
+                &dxl_error
+            );
+
+            if (dxl_comm_result != COMM_SUCCESS) {
+                RCLCPP_ERROR(rclcpp::get_logger("static_position_node"), "Failed to set Position Control Mode.");
+            } else {
+                RCLCPP_INFO(rclcpp::get_logger("static_position_node"), "Succeeded to set Position Control Mode.");
+            }
+
+            // Enable Torque of DYNAMIXEL
+            dxl_comm_result = packetHandler->write1ByteTxRx(
+                portHandler,
+                dxl_id,
+                ADDR_TORQUE_ENABLE,
+                1,
+                &dxl_error
+            );
+
+            if (dxl_comm_result != COMM_SUCCESS) {
+                RCLCPP_ERROR(rclcpp::get_logger("static_position_node"), "Failed to enable torque for motor ID %d.", dxl_id);
+            } else {
+                RCLCPP_INFO(rclcpp::get_logger("static_position_node"), "Succeeded to enable torque for motor ID %d.", dxl_id);
+            }
+        }
+
         // Motor Command Function:
         void command_motor_position(int motor_id, double target_angle) {
             // Determine the desired position in ticks and clamp to motor limits:
@@ -125,12 +157,16 @@ public:
                 static_cast<uint32_t>(calibrated_target_pos),
                 &dxl_error
             );
-            if (dxl_comm_result != COMM_SUCCESS) {
-                RCLCPP_ERROR(get_logger(), "Failed to write to motor ID %d: %s", motor_id,
-                            packetHandler->getTxRxResult(dxl_comm_result));
-            }
             if (dxl_error != 0) {
                 RCLCPP_ERROR(get_logger(), "Motor error for ID %d: %d", motor_id, dxl_error);
+            }
+
+            if (dxl_comm_result != COMM_SUCCESS) {
+                RCLCPP_INFO(this->get_logger(), "%s", packetHandler->getTxRxResult(dxl_comm_result));
+            } else if (dxl_error != 0) {
+                RCLCPP_INFO(this->get_logger(), "%s", packetHandler->getRxPacketError(dxl_error));
+            } else {
+                RCLCPP_INFO(this->get_logger(), "Set [ID: %d] [Goal Position: %d]", motor_id, calibrated_target_pos);
             }
         }
 
