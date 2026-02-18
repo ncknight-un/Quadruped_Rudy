@@ -103,6 +103,7 @@ public:
         RCLCPP_INFO(get_logger(), "Initializing robot in standing position...");
         std::vector<double> target_angles = standing_pose_;
         for (size_t i = 0; i < motor_ids_.size(); ++i) {
+            sleep_for(std::chrono::milliseconds(100)); // Small delay between commands (avoids bus overload)
             command_motor_position(motor_ids_[i], target_angles[i]);
         }
     }
