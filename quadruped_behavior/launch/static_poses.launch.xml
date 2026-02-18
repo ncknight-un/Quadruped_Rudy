@@ -1,0 +1,28 @@
+<?xml version='1.0'?>
+<launch>
+    <!-- Arguement to launch Rviz -->
+    <arg name="use_rviz" default="true" 
+        description="The user can control whether the turtlebot3 is shown in Rviz or not at launch. This is false for localhost">
+        <choice value="true"/>
+        <choice value="false"/>
+    </arg>
+
+    <!-- Load the Rudy in Simulation -->
+    <include file="$(find-pkg-share rudy_description)/launch/launch_rudy.launch.xml">
+        <arg name="color" value="purple"/>
+        <arg name="use_rviz" value="false"/>
+        <arg name="use_jsp" value="true"/>
+    </include>
+
+    <!-- Launch the Static Position Node -->
+    <node pkg='quadruped_behavior' exec='static_position_node'>
+        <param from = "$(find-pkg-share quadruped_behavior)/config/static_poses.yaml"/>
+        <param from = "$(find-pkg-share quadruped_behavior)/config/motor_params.yaml"/>
+    </node>
+
+    <!-- RViz Launch-->
+    <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share nuturtle_control)/config/load_nusim_odometry.rviz" 
+        if="$(eval '\'$(var use_rviz)\'==\'true\'')" on_exit="shutdown">
+        <remap from='map' to='nusim/world'/>
+    </node>
+</launch>

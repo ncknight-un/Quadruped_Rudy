@@ -1,6 +1,6 @@
 /**:
   ros__parameters:
     motor_ids: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17]
-    motor_cmd_max: 265
-    motor_cmd_per_rad_sec: 41.67
+    motor_calib_offsets: [4076, 1020, 2015, 3052, 3081, 988, 1522, -23, 2053, 3054, 3073, 2059, 4086, 1003]
     encode_ticks_per_rad: 652
+    max_encoder_value: 4096
