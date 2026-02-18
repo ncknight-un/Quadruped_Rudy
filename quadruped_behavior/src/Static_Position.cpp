@@ -63,6 +63,14 @@ public:
         packetHandler = dynamixel::PacketHandler::getPacketHandler(PROTOCOL_VERSION);
 
         // Open Port and Enable Torque:
+        if (!portHandler->openPort()) {
+            RCLCPP_FATAL(get_logger(), "Failed to open port %s", DEVICE_NAME);
+            throw std::runtime_error("Failed to open port");
+        }
+        if (!portHandler->setBaudRate(BAUDRATE)) {
+            RCLCPP_FATAL(get_logger(), "Failed to set baudrate %d", BAUDRATE);
+            throw std::runtime_error("Failed to set baudrate");
+        }
         for (const auto& motor_id: motor_ids_) {
             setupDynamixel(static_cast<uint8_t>(motor_id));
         }
