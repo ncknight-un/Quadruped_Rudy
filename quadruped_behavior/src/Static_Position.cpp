@@ -41,10 +41,6 @@
 #define BAUDRATE 57600  // Default Baudrate of DYNAMIXEL X series
 #define DEVICE_NAME "/dev/ttyUSB0"  // [Linux]: "/dev/ttyUSB*", [Windows]: "COM*"
 
-uint8_t dxl_error = 0;
-uint32_t goal_position = 0;
-int dxl_comm_result = COMM_TX_FAIL;
-
 class StaticPositionNode : public rclcpp::Node {
 public:
     StaticPositionNode() : Node("static_position_node")
@@ -112,6 +108,9 @@ public:
         }
 
         void setupDynamixel(uint8_t dxl_id) {
+            int dxl_comm_result = COMM_TX_FAIL;
+            uint8_t dxl_error = 0;
+
             // Use Position Control Mode
             dxl_comm_result = packetHandler->write1ByteTxRx(
                 portHandler,
@@ -122,9 +121,9 @@ public:
             );
 
             if (dxl_comm_result != COMM_SUCCESS) {
-                RCLCPP_ERROR(rclcpp::get_logger("static_position_node"), "Failed to set Position Control Mode.");
+                RCLCPP_ERROR(this->get_logger(), "Failed to set Position Control Mode.");
             } else {
-                RCLCPP_INFO(rclcpp::get_logger("static_position_node"), "Succeeded to set Position Control Mode.");
+                RCLCPP_INFO(this->get_logger(), "Succeeded to set Position Control Mode.");
             }
 
             // Enable Torque of DYNAMIXEL
@@ -137,9 +136,10 @@ public:
             );
 
             if (dxl_comm_result != COMM_SUCCESS) {
-                RCLCPP_ERROR(rclcpp::get_logger("static_position_node"), "Failed to enable torque for motor ID %d.", dxl_id);
+                RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to enable torque for motor ID " << static_cast<int>(dxl_id));
+
             } else {
-                RCLCPP_INFO(rclcpp::get_logger("static_position_node"), "Succeeded to enable torque for motor ID %d.", dxl_id);
+                RCLCPP_INFO(this->get_logger(), "Successfully enabled torque for motor ID %d.", dxl_id);
             }
         }
 
@@ -150,10 +150,11 @@ public:
 
             // Send command to motor (example, adjust as needed):
             uint8_t dxl_error = 0;
+
             auto dxl_comm_result = packetHandler->write4ByteTxRx(
                 portHandler,
                 motor_id,
-                ADDR_PRESENT_POSITION,
+                ADDR_GOAL_POSITION,
                 static_cast<uint32_t>(calibrated_target_pos),
                 &dxl_error
             );
