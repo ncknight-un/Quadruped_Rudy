@@ -7,6 +7,7 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include "rudylib/angle.hpp"
 
 namespace rudylib
 {
@@ -67,6 +68,6 @@ namespace rudylib
             std::vector<double> Hip_joint_limits = {0.0, 0.0}; // Joint limits in radians
             std::vector<double> Knee_joint_limits = {0.0, 0.0}; // Joint limits in radians
 
-    } // End of class QuadrupedLeg
+    }; // End of class QuadrupedLeg
 } // namespace rudylib
 #endif // RUDYLIB_KINEMATICS_INCLUDE_GUARD_HPP

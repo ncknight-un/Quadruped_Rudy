@@ -1,8 +1,8 @@
-#include "rudylib/kinematics.hpp"
+#include "rudylib/LegKinematics.hpp"
 
 namespace rudylib {
     QuadrupedLeg::QuadrupedLeg(double coxa, double femur, double tibia, char legtype, std::vector<double> Abad_joint_limits, std::vector<double> Hip_joint_limits, std::vector<double> Knee_joint_limits)
-    : coxa_(coxa), femur_(femur), tibia_(tibia), legtype(legtype), Abad_joint_limits(Abad_joint_limits), Hip_joint_limits(Hip_joint_limits), Knee_joint_limits(Knee_joint_limits)) {} // End of constructor
+    : coxa_(coxa), femur_(femur), tibia_(tibia), legtype(legtype), Abad_joint_limits(Abad_joint_limits), Hip_joint_limits(Hip_joint_limits), Knee_joint_limits(Knee_joint_limits) {} // End of constructor
 
     bool QuadrupedLeg::is_within_domain(Point3D target) {
         // Check the Global Domain (L):
@@ -28,7 +28,7 @@ namespace rudylib {
         return true;
     }
 
-    // Forward Kinematics: Angles -> Position
+    // Forward Kinematics: Angles to Position
     Point3D QuadrupedLeg::update_FK(JointAngles angles) {
         // First find the position of the hip joint after abduction
         double x_hip = coxa_ * sin(angles.abad);
@@ -40,20 +40,20 @@ namespace rudylib {
         
         // Calculate the foot position in 3D space:
         Point3D foot;
-        foot.x = x_hip + r * sin(angles.abad);  // Total abduction/adduction offset in the X direction
+        foot.x = x_hip + h * sin(angles.abad);  // Total abduction/adduction offset in the X direction
         foot.y = r;  // Total forward/backward reach in the Y direction
-        foot.z = z_hip + h * cos(angles.abad); // Total height in the Z direction
+        foot.z = -(z_hip + h * cos(angles.abad)); // Total height in the Z direction
         
         // Return the x, y, z position of the foot given the joint angles:
         return foot;
     }
 
-    // Inverse Kinematics: Position -> Angles
+    // Inverse Kinematics: Position to Angles
     JointAngles QuadrupedLeg::calc_IK(Point3D target) {
         JointAngles result;
 
         // Solve Abduction Angle:
-        result.abad = atan2(target.x, target.z);
+        result.abad = atan2(target.x, -target.z);
 
         // Reposition effective lower leg origin at hip origin moving Hip Joint:
         double x_eff = coxa_ * sin(result.abad);    // Shift in X due to abduction
@@ -62,14 +62,14 @@ namespace rudylib {
         // Solve 3D distance K - the effective distance from the hip joint to the target foot position:
         double dx = target.x - x_eff;
         double dy = target.y;           // No shift in Y since abduction doesn't affect forward/backward position
-        double dz = target.z - z_eff;
+        double dz = -target.z - z_eff;
         double K = sqrt(dx*dx + dy*dy + dz*dz);
 
         // Solve Knee Angle (Law of Cosines):
         double cos_knee = (femur_*femur_ + tibia_*tibia_ - K*K) / (2 * femur_ * tibia_);
-        // Constrain to avoid NaN if target is out of reach
-        cos_knee = std::max(-1.0, std::min(1.0, cos_knee));
-        result.knee = acos(cos_knee);
+        result.knee = std::numbers::pi + acos(cos_knee);
+        // Wrap the knee angle to the range [-pi, pi]:
+        result.knee = rudylib::normalize_angle(result.knee);
 
         // Solve Hip Angle:
         double alpha1 = atan2(dy, sqrt(dx*dx + dz*dz)); // Angle from hip to target in the horizontal plane
@@ -78,7 +78,13 @@ namespace rudylib {
         double alpha2 = acos(cos_alpha2);
         result.hip = alpha1 + alpha2;
 
-        // Return resulting joint angles for abad, hip, and knee:
+        // Flip the angles for the right legs to maintain consistent positive direction convention:
+        // Note: If you reproduce this model, you may need to adjust this if you orient your legs differently.
+        if (legtype == 'R') {
+            result.abad = -result.abad;   // Flip abduction angle for right legs
+            result.hip = result.hip;     // Hips are oriented the same for left and right legs, so no flip needed
+            result.knee = -result.knee;   // Flip knee angle for right legs
+        }
         return result;
     }
 };
