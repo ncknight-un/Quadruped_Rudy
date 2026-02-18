@@ -7,6 +7,12 @@
         <choice value="false"/>
     </arg>
 
+    <!-- RViz Launch-->
+    <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share quadruped_behavior)/config/load_nusim_odometry.rviz" 
+        if="$(eval '\'$(var use_rviz)\'==\'true\'')" on_exit="shutdown">
+        <remap from='map' to='nusim/world'/>
+    </node>
+
     <!-- Load the Rudy in Simulation -->
     <include file="$(find-pkg-share rudy_description)/launch/launch_rudy.launch.xml">
         <arg name="color" value="purple"/>
@@ -18,11 +24,5 @@
     <node pkg='quadruped_behavior' exec='static_position_node'>
         <param from = "$(find-pkg-share quadruped_behavior)/config/static_poses.yaml"/>
         <param from = "$(find-pkg-share quadruped_behavior)/config/motor_params.yaml"/>
-    </node>
-
-    <!-- RViz Launch-->
-    <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share quadruped_behavior)/config/load_nusim_odometry.rviz" 
-        if="$(eval '\'$(var use_rviz)\'==\'true\'')" on_exit="shutdown">
-        <remap from='map' to='nusim/world'/>
     </node>
 </launch>

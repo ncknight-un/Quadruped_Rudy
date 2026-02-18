@@ -111,35 +111,24 @@ public:
             int dxl_comm_result = COMM_TX_FAIL;
             uint8_t dxl_error = 0;
 
-            // Use Position Control Mode
-            dxl_comm_result = packetHandler->write1ByteTxRx(
-                portHandler,
-                dxl_id,
-                ADDR_OPERATING_MODE,
-                3,
-                &dxl_error
-            );
-
-            if (dxl_comm_result != COMM_SUCCESS) {
-                RCLCPP_ERROR(this->get_logger(), "Failed to set Position Control Mode.");
-            } else {
-                RCLCPP_INFO(this->get_logger(), "Succeeded to set Position Control Mode.");
+            // Disable torque
+            dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, dxl_id, ADDR_TORQUE_ENABLE, 0, &dxl_error);
+            if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to disable torque for motor " << int(dxl_id));
             }
 
-            // Enable Torque of DYNAMIXEL
-            dxl_comm_result = packetHandler->write1ByteTxRx(
-                portHandler,
-                dxl_id,
-                ADDR_TORQUE_ENABLE,
-                1,
-                &dxl_error
-            );
+            // Set operating mode to Position Control
+            dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, dxl_id, ADDR_OPERATING_MODE, 3, &dxl_error);
+            if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to set Position Control Mode for motor " << int(dxl_id));
+            }
 
-            if (dxl_comm_result != COMM_SUCCESS) {
-                RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to enable torque for motor ID " << static_cast<int>(dxl_id));
-
+            // Enable torque
+            dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, dxl_id, ADDR_TORQUE_ENABLE, 1, &dxl_error);
+            if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to enable torque for motor " << int(dxl_id));
             } else {
-                RCLCPP_INFO(this->get_logger(), "Successfully enabled torque for motor ID %d.", dxl_id);
+                RCLCPP_INFO_STREAM(this->get_logger(), "Motor " << int(dxl_id) << " ready in Position Control Mode.");
             }
         }
 
