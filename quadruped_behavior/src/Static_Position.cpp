@@ -153,7 +153,7 @@ public:
 
                 // Convert to radians
                 current_joints[i] = ticks_to_radians(corrected_ticks);  // At start up should be 0.
-                RCLPP_C_INFO_STREAM(this->get_logger(), "Motor ID: " << motor_ids_[i] << " | Raw Ticks: " << raw_ticks[i] << " | Corrected Ticks: " << corrected_ticks << " | Current Angle (rad): " << current_joints[i]);
+                RCLCPP_INFO_STREAM(this->get_logger(), "Motor ID: " << motor_ids_[i] << " | Raw Ticks: " << raw_ticks[i] << " | Corrected Ticks: " << corrected_ticks << " | Current Angle (rad): " << current_joints[i]);
             }
 
             // Determine target joint angles (radians)
@@ -183,7 +183,10 @@ public:
             }
 
             // Calculate how much to move the joints: 
-            command_joints = current_joints; // Default to current position (no movement)
+            std::vector<double> command_joints(motor_ids_.size());
+            for (size_t i = 0; i < motor_ids_.size(); ++i) {
+                command_joints[i] = target_joints[i] - current_joints[i];
+            }
 
             // // 4. Publish measured joint states
             // sensor_msgs::msg::JointState joint_state_msg;
