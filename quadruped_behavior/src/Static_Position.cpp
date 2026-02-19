@@ -272,6 +272,7 @@ public:
         }
 
         // Get current Motor Positions:
+        // Returns the encoder position of each motor after applying the calibration offset.
         std::vector<int32_t> ReadAllMotorPosition(){
             std::vector<int32_t> positions;
             for (const auto& motor_id: motor_ids_) {
@@ -290,7 +291,7 @@ public:
                     RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to read position for motor " << motor_id);
                     positions.push_back(0.0); // Default to 0 on error
                 } else {
-                    double position_rad = ticks_to_radians(present_position - motor_offset_map_[motor_id]);
+                    double position_rad = present_position - motor_offset_map_[motor_id];
                     positions.push_back(position_rad);
                 }
             }
@@ -300,7 +301,7 @@ public:
         // Motor Command Function:
         void command_motor_position(int motor_id, double target_angle) {
             // Determine the desired position in ticks and clamp to motor limits:
-            int calibrated_target_pos = std::clamp(radians_to_ticks(target_angle) + motor_offset_map_[motor_id], 0, max_encoder_value_);
+            int calibrated_target_pos = std::clamp(radians_to_ticks(target_angle), 0, max_encoder_value_);
             RCLCPP_INFO_STREAM(this->get_logger(), "Commanding Motor ID: " << motor_id << " | Target Angle (rad): " << target_angle << " | Target Position (ticks): " << calibrated_target_pos);
 
             // Send command to motor (example, adjust as needed):
@@ -395,7 +396,7 @@ public:
         // Get the encode_ticks_per_rad parameter:
         int eticks_per_rad_ = this->declare_parameter<int>("encode_ticks_per_rad", 652);
         // Set the max encoder value parameter:
-        int max_encoder_value_ = this->declare_parameter<int>("max_encoder_value", 4096);
+        int max_encoder_value_ = this->declare_parameter<int>("max_encoder_value", 4095);
         // Set the profile velocity and acceleration parameters:
         int profile_velocity_ = this->declare_parameter<int>("profile_velocity", 80);
         int profile_acceleration_ = this->declare_parameter<int>("profile_acceleration", 30);
