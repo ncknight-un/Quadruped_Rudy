@@ -149,17 +149,16 @@ public:
 
             for (size_t i = 0; i < motor_ids_.size(); ++i) {
                 // Convert to radians for current joint position:
-                current_joints[i] = ticks_to_radians(calibrated_ticks[i]);  // At start up should be 0.
-                if(current_state_ == RobotState::STANDING) {
-                    RCLCPP_INFO_STREAM(this->get_logger(), "Current Motor ID: " << motor_ids_[i] << " | Calibrated Ticks: " << calibrated_ticks[i] << " | Current Angle (rad): " << current_joints[i]);
-                }
+                current_joints[i] = ticks_to_radians(calibrated_ticks[i]);
+                // if(current_state_ == RobotState::STANDING) {
+                //     RCLCPP_INFO_STREAM(this->get_logger(), "Current Motor ID: " << motor_ids_[i] << " | Calibrated Ticks: " << calibrated_ticks[i] << " | Current Angle (rad): " << current_joints[i]);
+                // }
             }
 
             // Determine target joint angles (radians)
             std::vector<double> target_joints;
 
-            switch (current_state_)
-            {
+            switch (current_state_) {
                 case RobotState::STANDING:
                     target_joints = standing_pose_;
                     break;
@@ -180,6 +179,12 @@ public:
                 default:
                     break;
             }
+            
+            // Determine which tick positions to command based on target joint angles:
+            std::vector<int32_t> target_ticks(motor_ids_.size());
+            for (size_t i = 0; i < motor_ids_.size(); ++i) {
+                target_ticks[i] = radians_to_ticks(target_joints[i]);
+            }
 
             // // 4. Publish measured joint states
             // sensor_msgs::msg::JointState joint_state_msg;
@@ -196,14 +201,13 @@ public:
             // Send motor commands if not waiting
             if (current_state_ != RobotState::WAITING) {
                 if (target_joints.size() != motor_ids_.size()) {
-                    RCLCPP_ERROR(this->get_logger(),
-                                "Target pose size does not match motor count!");
+                    RCLCPP_ERROR(this->get_logger(), "Target pose size does not match motor count!");
                     return;
                 }
 
                 for (size_t i = 0; i < motor_ids_.size(); ++i) {
-                    command_motor_position(motor_ids_[i], target_joints[i]);
-                    rclcpp::sleep_for(std::chrono::milliseconds(15));
+                    command_motor_position(motor_ids_[i], target_ticks[i]);
+                    rclcpp::sleep_for(std::chrono::milliseconds(5)); // Small delay to avoid overloading the bus.
                 }
             }
         };
@@ -299,10 +303,9 @@ public:
         }
 
         // Motor Command Function:
-        void command_motor_position(int motor_id, double target_angle) {
+        void command_motor_position(int motor_id, int32_t target_ticks) {
             // Determine the desired position in ticks and clamp to motor limits:
-            int calibrated_target_pos = std::clamp(radians_to_ticks(target_angle), 0, max_encoder_value_);
-            RCLCPP_INFO_STREAM(this->get_logger(), "Commanding Motor ID: " << motor_id << " | Target Angle (rad): " << target_angle << " | Target Position (ticks): " << calibrated_target_pos);
+                RCLCPP_INFO_STREAM(this->get_logger(), "Commanding Motor ID: " << motor_id << " | Target Ticks: " << target_ticks << " | Calibrated Target Position (ticks): " << calibrated_target_pos);
 
             // Send command to motor (example, adjust as needed):
             uint8_t dxl_error = 0;
@@ -311,7 +314,7 @@ public:
                 portHandler,
                 motor_id,
                 ADDR_GOAL_POSITION,
-                static_cast<uint32_t>(calibrated_target_pos),
+                static_cast<uint32_t>(target_ticks),
                 &dxl_error
             );
             if (dxl_error != 0) {
