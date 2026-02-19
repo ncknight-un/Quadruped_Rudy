@@ -136,9 +136,10 @@ public:
             timestep_publisher_->publish(message);
 
             // Read Raw Encode Ticks from Motors:
-            std::vector<int32_t> raw_ticks = ReadAllMotorPosition();
+            // NOTE: Offset is applied in ReadAllMotorPosition Function.
+            std::vector<int32_t> calibrated_ticks = ReadAllMotorPosition();
 
-            if (raw_ticks.size() != motor_ids_.size()) {
+            if (calibrated_ticks.size() != motor_ids_.size()) {
                 RCLCPP_ERROR(this->get_logger(), "ReadAllMotorPosition returned wrong size!");
                 return;
             }
@@ -146,14 +147,10 @@ public:
             // Convert encoder ticks -> joint radians
             std::vector<double> current_joints(motor_ids_.size());
 
-            for (size_t i = 0; i < motor_ids_.size(); ++i)
-            {
-                // Apply offset in encoder space
-                int32_t corrected_ticks = raw_ticks[i]; // - motor_offsets_[i];   // Subtract the offset, so at 0 radiands, the motor ticks should be 0.
-
-                // Convert to radians
-                current_joints[i] = ticks_to_radians(corrected_ticks);  // At start up should be 0.
-                RCLCPP_INFO_STREAM(this->get_logger(), "Motor ID: " << motor_ids_[i] << " | Raw Ticks: " << raw_ticks[i] << " | Corrected Ticks: " << corrected_ticks << " | Current Angle (rad): " << current_joints[i]);
+            for (size_t i = 0; i < motor_ids_.size(); ++i) {
+                // Convert to radians for current joint position:
+                current_joints[i] = ticks_to_radians(calibrated_ticks[i]);  // At start up should be 0.
+                RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Motor ID: " << motor_ids_[i] << " | Calibrated Ticks: " << calibrated_ticks[i] << " | Current Angle (rad): " << current_joints[i]);
             }
 
             // Determine target joint angles (radians)
@@ -182,21 +179,20 @@ public:
                     break;
             }
 
-            // 4. Publish measured joint states
-            sensor_msgs::msg::JointState joint_state_msg;
-            joint_state_msg.header.stamp = this->now();
-            joint_state_msg.name.resize(motor_ids_.size());
-            joint_state_msg.position = current_joints;
+            // // 4. Publish measured joint states
+            // sensor_msgs::msg::JointState joint_state_msg;
+            // joint_state_msg.header.stamp = this->now();
+            // joint_state_msg.name.resize(motor_ids_.size());
+            // joint_state_msg.position = current_joints;
 
-            for (size_t i = 0; i < motor_ids_.size(); ++i) {
-                joint_state_msg.name[i] = "motor_" + std::to_string(motor_ids_[i]);
-            }
+            // for (size_t i = 0; i < motor_ids_.size(); ++i) {
+            //     joint_state_msg.name[i] = "motor_" + std::to_string(motor_ids_[i]);
+            // }
 
-            joint_state_pub_->publish(joint_state_msg);
+            // joint_state_pub_->publish(joint_state_msg);
 
             // Send motor commands if not waiting
-            if (current_state_ != RobotState::WAITING)
-            {
+            if (current_state_ != RobotState::WAITING) {
                 if (target_joints.size() != motor_ids_.size()) {
                     RCLCPP_ERROR(this->get_logger(),
                                 "Target pose size does not match motor count!");
@@ -205,10 +201,7 @@ public:
 
                 for (size_t i = 0; i < motor_ids_.size(); ++i)
                 {
-                    command_motor_position(
-                        motor_ids_[i],
-                        target_joints[i]   // radians
-                    );
+                    command_motor_position(motor_ids_[i], target_joints[i]);
                 }
             }
         };
@@ -231,6 +224,16 @@ public:
         void setupDynamixel(uint8_t dxl_id) {
             int dxl_comm_result = COMM_TX_FAIL;
             uint8_t dxl_error = 0;
+
+            // Disable torque at shutdown:
+            for (const auto& dxl_id : motor_ids_) {
+                dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, dxl_id, ADDR_TORQUE_ENABLE, 0, &dxl_error);
+                if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to disable torque for motor " << int(dxl_id));
+                } else {
+                    RCLCPP_INFO_STREAM(this->get_logger(), "Torque disabled for motor " << int(dxl_id));
+                }
+            }
 
             // Set operating mode to Position Control
             dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, dxl_id, ADDR_OPERATING_MODE, 3, &dxl_error);
@@ -426,15 +429,5 @@ int main(int argc, char * argv[])
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<StaticPositionNode>());
   rclcpp::shutdown();
-
-    // Disable torque at shutdown:
-    for (const auto& dxl_id : motor_ids_) {
-        dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, dxl_id, ADDR_TORQUE_ENABLE, 0, &dxl_error);
-        if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
-            RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to disable torque for motor " << int(dxl_id));
-        } else {
-            RCLCPP_INFO_STREAM(this->get_logger(), "Torque disabled for motor " << int(dxl_id));
-        }
-    }
   return 0;
 }
