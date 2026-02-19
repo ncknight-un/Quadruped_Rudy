@@ -149,7 +149,7 @@ public:
             for (size_t i = 0; i < motor_ids_.size(); ++i)
             {
                 // Apply offset in encoder space
-                int32_t corrected_ticks = raw_ticks[i]; //- motor_offsets_[i];   // Subtract the offset, so at 0 radiands, the motor ticks should be 0.
+                int32_t corrected_ticks = raw_ticks[i]; // - motor_offsets_[i];   // Subtract the offset, so at 0 radiands, the motor ticks should be 0.
 
                 // Convert to radians
                 current_joints[i] = ticks_to_radians(corrected_ticks);  // At start up should be 0.
@@ -182,35 +182,33 @@ public:
                     break;
             }
 
-            // Calculate how much to move the joints: 
-            std::vector<double> command_joints(motor_ids_.size());
+            // 4. Publish measured joint states
+            sensor_msgs::msg::JointState joint_state_msg;
+            joint_state_msg.header.stamp = this->now();
+            joint_state_msg.name.resize(motor_ids_.size());
+            joint_state_msg.position = current_joints;
+
             for (size_t i = 0; i < motor_ids_.size(); ++i) {
-                command_joints[i] = target_joints[i] - current_joints[i];
+                joint_state_msg.name[i] = "motor_" + std::to_string(motor_ids_[i]);
             }
 
-            // // 4. Publish measured joint states
-            // sensor_msgs::msg::JointState joint_state_msg;
-            // joint_state_msg.header.stamp = this->now();
-            // joint_state_msg.name.resize(motor_ids_.size());
-            // joint_state_msg.position = current_joints;
-
-            // for (size_t i = 0; i < motor_ids_.size(); ++i) {
-            //     joint_state_msg.name[i] = "motor_" + std::to_string(motor_ids_[i]);
-            // }
-
-            // joint_state_pub_->publish(joint_state_msg);
+            joint_state_pub_->publish(joint_state_msg);
 
             // Send motor commands if not waiting
-            if (current_state_ != RobotState::WAITING) {   
-                // Make sure that the publication will be for all joints:
+            if (current_state_ != RobotState::WAITING)
+            {
                 if (target_joints.size() != motor_ids_.size()) {
-                    RCLCPP_ERROR(this->get_logger(), "Target pose size does not match motor count!");
+                    RCLCPP_ERROR(this->get_logger(),
+                                "Target pose size does not match motor count!");
                     return;
                 }
 
                 for (size_t i = 0; i < motor_ids_.size(); ++i)
                 {
-                    command_motor_position( motor_ids_[i], command_joints[i]);
+                    command_motor_position(
+                        motor_ids_[i],
+                        target_joints[i]   // radians
+                    );
                 }
             }
         };
