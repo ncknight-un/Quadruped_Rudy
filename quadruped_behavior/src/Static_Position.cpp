@@ -201,10 +201,9 @@ public:
                     return;
                 }
 
-                for (size_t i = 0; i < motor_ids_.size(); ++i)
-                {
+                for (size_t i = 0; i < motor_ids_.size(); ++i) {s
                     command_motor_position(motor_ids_[i], target_joints[i]);
-                    sleep_for(std::chrono::milliseconds(15)); // Small delay between commands to avoid bus overload
+                    rclcpp::sleep_for(std::chrono::milliseconds(15));
                 }
             }
         };
