@@ -150,7 +150,9 @@ public:
             for (size_t i = 0; i < motor_ids_.size(); ++i) {
                 // Convert to radians for current joint position:
                 current_joints[i] = ticks_to_radians(calibrated_ticks[i]);  // At start up should be 0.
-                RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Motor ID: " << motor_ids_[i] << " | Calibrated Ticks: " << calibrated_ticks[i] << " | Current Angle (rad): " << current_joints[i]);
+                if(current_state_ == RobotState::STANDING) {
+                    RCLCPP_INFO_STREAM(this->get_logger(), "Current Motor ID: " << motor_ids_[i] << " | Calibrated Ticks: " << calibrated_ticks[i] << " | Current Angle (rad): " << current_joints[i]);
+                }
             }
 
             // Determine target joint angles (radians)
