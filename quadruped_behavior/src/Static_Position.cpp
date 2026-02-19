@@ -305,7 +305,7 @@ public:
         // Motor Command Function:
         void command_motor_position(int motor_id, int32_t target_ticks) {
             // Determine the desired position in ticks and clamp to motor limits:
-                RCLCPP_INFO_STREAM(this->get_logger(), "Commanding Motor ID: " << motor_id << " | Target Ticks: " << target_ticks << " | Calibrated Target Position (ticks): " << calibrated_target_pos);
+            RCLCPP_INFO_STREAM(this->get_logger(), "Commanding Motor ID: " << motor_id << " | Target Ticks: " << target_ticks);
 
             // Send command to motor (example, adjust as needed):
             uint8_t dxl_error = 0;
@@ -326,7 +326,7 @@ public:
             } else if (dxl_error != 0) {
                 RCLCPP_INFO(this->get_logger(), "%s", packetHandler->getRxPacketError(dxl_error));
             } else {
-                RCLCPP_INFO(this->get_logger(), "Set [ID: %d] [Goal Position: %d]", motor_id, calibrated_target_pos);
+                RCLCPP_INFO(this->get_logger(), "Set [ID: %d] [Goal Position: %d]", motor_id, target_ticks);
             }
         }
 
