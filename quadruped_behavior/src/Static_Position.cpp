@@ -300,7 +300,8 @@ public:
         // Motor Command Function:
         void command_motor_position(int motor_id, double target_angle) {
             // Determine the desired position in ticks and clamp to motor limits:
-            int calibrated_target_pos = std::clamp(radians_to_ticks(target_angle) - motor_offset_map_[motor_id], 0, max_encoder_value_);
+            int calibrated_target_pos = std::clamp(radians_to_ticks(target_angle) + motor_offset_map_[motor_id], 0, max_encoder_value_);
+            RCLCPP_INFO_STREAM(this->get_logger(), "Commanding Motor ID: " << motor_id << " | Target Angle (rad): " << target_angle << " | Target Position (ticks): " << calibrated_target_pos);
 
             // Send command to motor (example, adjust as needed):
             uint8_t dxl_error = 0;
