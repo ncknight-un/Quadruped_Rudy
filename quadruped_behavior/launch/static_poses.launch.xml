@@ -17,7 +17,7 @@
     <include file="$(find-pkg-share rudy_description)/launch/launch_rudy.launch.xml">
         <arg name="color" value="purple"/>
         <arg name="use_rviz" value="false"/>
-        <arg name="use_jsp" value="true"/>
+        <arg name="use_jsp" value="false"/>
     </include>
 
     <!-- Launch the Static Position Node -->
