@@ -198,7 +198,19 @@ public:
                     RCLCPP_ERROR(this->get_logger(), "Target pose size does not match motor count!");
                     return;
                 }
-
+                
+                // If state has been changed, print the target joint angles once:
+                static RobotState last_state = RobotState::WAITING;
+                if (current_state_ != last_state) {
+                    RCLCPP_INFO_STREAM(this->get_logger(), "New State: " << (current_state_ == RobotState::STANDING ? "STANDING" :
+                                                        (current_state_ == RobotState::SITTING ? "SITTING" :
+                                                        (current_state_ == RobotState::KNEELING ? "KNEELING" :
+                                                        (current_state_ == RobotState::LYING ? "LYING" : "WAITING")))));
+                    for (size_t i = 0; i < motor_ids_.size(); ++i) {
+                        RCLCPP_INFO_STREAM(this->get_logger(), "Target Motor ID: " << motor_ids_[i] << " | Target Angle (rad): " << target_joints[i]);
+                    }
+                    last_state = current_state_;
+                }
                 for (size_t i = 0; i < motor_ids_.size(); ++i) {
                     command_motor_position(motor_ids_[i], target_joints[i]);
                     rclcpp::sleep_for(std::chrono::milliseconds(5)); // Small delay to avoid overloading the bus.
@@ -299,7 +311,7 @@ public:
         // Motor Command Function:
         void command_motor_position(int motor_id, double target_angle) {
             // Determine the desired position in ticks and clamp to motor limits:
-            int calibrated_target_pos = std::clamp(radians_to_ticks(target_angle) - motor_offset_map_[motor_id], 0, max_encoder_value_);
+            int calibrated_target_pos = std::clamp(radians_to_ticks(target_angle)  motor_offset_map_[motor_id], 0, max_encoder_value_);
             RCLCPP_INFO_STREAM(this->get_logger(), "Commanding Motor ID: " << motor_id << " | Target Angle (rad): " << target_angle << " | Target Position (ticks): " << calibrated_target_pos);
 
             // Send command to motor (example, adjust as needed):

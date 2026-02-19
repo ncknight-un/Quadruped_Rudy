@@ -10,11 +10,11 @@
 
     standing_pose:  
       # Abad joints: neutral
-      [0.0, -0.1, 0.0, -0.1, 0.0, -0.1, 0.0, -0.1,  
+      [0.0, -0.01, 0.0, -0.01, 0.0, -0.01, 0.0, -0.01,  
       # Head joints: forward
-      0.0, 0.25,  
+      0.1, 0.05,  
       # Knee joints: slightly extended for standing
-      0.5, 0.5, 0.5, 0.5]
+      0.5, -0.5, 0.5, -0.5]
 
     kneeling_pose:  
       # Abad joints: slight outward
