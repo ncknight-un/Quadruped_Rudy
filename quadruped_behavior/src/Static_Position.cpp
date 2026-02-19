@@ -149,7 +149,7 @@ public:
             for (size_t i = 0; i < motor_ids_.size(); ++i)
             {
                 // Apply offset in encoder space
-                int32_t corrected_ticks = raw_ticks[i] - motor_offsets_[i];   // Subtract the offset, so at 0 radiands, the motor ticks should be 0.
+                int32_t corrected_ticks = raw_ticks[i]; //- motor_offsets_[i];   // Subtract the offset, so at 0 radiands, the motor ticks should be 0.
 
                 // Convert to radians
                 current_joints[i] = ticks_to_radians(corrected_ticks);  // At start up should be 0.
