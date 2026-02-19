@@ -179,12 +179,6 @@ public:
                 default:
                     break;
             }
-            
-            // Determine which tick positions to command based on target joint angles:
-            std::vector<int32_t> target_ticks(motor_ids_.size());
-            for (size_t i = 0; i < motor_ids_.size(); ++i) {
-                target_ticks[i] = radians_to_ticks(target_joints[i]);
-            }
 
             // // 4. Publish measured joint states
             // sensor_msgs::msg::JointState joint_state_msg;
@@ -206,7 +200,7 @@ public:
                 }
 
                 for (size_t i = 0; i < motor_ids_.size(); ++i) {
-                    command_motor_position(motor_ids_[i], target_ticks[i]);
+                    command_motor_position(motor_ids_[i], target_joints[i]);
                     rclcpp::sleep_for(std::chrono::milliseconds(5)); // Small delay to avoid overloading the bus.
                 }
             }
@@ -303,9 +297,10 @@ public:
         }
 
         // Motor Command Function:
-        void command_motor_position(int motor_id, int32_t target_ticks) {
+        void command_motor_position(int motor_id, double target_angle) {
             // Determine the desired position in ticks and clamp to motor limits:
-            RCLCPP_INFO_STREAM(this->get_logger(), "Commanding Motor ID: " << motor_id << " | Target Ticks: " << target_ticks);
+            int calibrated_target_pos = std::clamp(radians_to_ticks(target_angle) - motor_offset_map_[motor_id], 0, max_encoder_value_);
+            RCLCPP_INFO_STREAM(this->get_logger(), "Commanding Motor ID: " << motor_id << " | Target Angle (rad): " << target_angle << " | Target Position (ticks): " << calibrated_target_pos);
 
             // Send command to motor (example, adjust as needed):
             uint8_t dxl_error = 0;
@@ -314,7 +309,7 @@ public:
                 portHandler,
                 motor_id,
                 ADDR_GOAL_POSITION,
-                static_cast<uint32_t>(target_ticks),
+                static_cast<uint32_t>(calibrated_target_pos),
                 &dxl_error
             );
             if (dxl_error != 0) {
@@ -326,7 +321,7 @@ public:
             } else if (dxl_error != 0) {
                 RCLCPP_INFO(this->get_logger(), "%s", packetHandler->getRxPacketError(dxl_error));
             } else {
-                RCLCPP_INFO(this->get_logger(), "Set [ID: %d] [Goal Position: %d]", motor_id, target_ticks);
+                RCLCPP_INFO(this->get_logger(), "Set [ID: %d] [Goal Position: %d]", motor_id, calibrated_target_pos);
             }
         }
 
