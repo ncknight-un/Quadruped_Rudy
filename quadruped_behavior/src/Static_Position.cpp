@@ -232,12 +232,6 @@ public:
             int dxl_comm_result = COMM_TX_FAIL;
             uint8_t dxl_error = 0;
 
-            // // Disable torque
-            // dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, dxl_id, ADDR_TORQUE_ENABLE, 0, &dxl_error);
-            // if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
-            //     RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to disable torque for motor " << int(dxl_id));
-            // }
-
             // Set operating mode to Position Control
             dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, dxl_id, ADDR_OPERATING_MODE, 3, &dxl_error);
             if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
@@ -432,5 +426,15 @@ int main(int argc, char * argv[])
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<StaticPositionNode>());
   rclcpp::shutdown();
+
+    // Disable torque at shutdown:
+    for (const auto& dxl_id : motor_ids_) {
+        dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, dxl_id, ADDR_TORQUE_ENABLE, 0, &dxl_error);
+        if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
+            RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to disable torque for motor " << int(dxl_id));
+        } else {
+            RCLCPP_INFO_STREAM(this->get_logger(), "Torque disabled for motor " << int(dxl_id));
+        }
+    }
   return 0;
 }
