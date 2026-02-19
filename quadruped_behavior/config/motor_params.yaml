@@ -4,3 +4,5 @@
     motor_calib_offsets: [4076, 1020, 2015, 3052, 3081, 988, 1522, -23, 2053, 3054, 3073, 2059, 4086, 1003]
     encode_ticks_per_rad: 652
     max_encoder_value: 4096
+    profile_velocity: 80
+    profile_acceleration: 30

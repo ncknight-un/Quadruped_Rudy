@@ -3,9 +3,12 @@
 /// The standing pose is the home position for the robot, and will be used as the default at start up.
 /// Motors 1, 3, 5, 7 are abad joints, motors 2, 4, 6, 8 are hip joints, motors 9 and 10 are head joints, and motors 11, 13, 15, 17 are knee joints.
 /// PARAMETERS:
-///     ~ motor_ids (std::vector<double>, default: []) - List of motor IDs to command.
+///     ~ rate (double, default: 100.0) - The frequency at which to publish joint states and motor commands.
+//      ~ motor_ids (std::vector<double>, default: []) - List of motor IDs to command.
 /// PUBLISHES:
 ///     ~ Joint States (sensor_msgs::msg::JointState): Publishes the joint states for the specified motor IDs to command the robot to stand in a static position.
+///     ~/timestep (std_msgs::msg::UInt64): Publishes the current timestep of the node at the specified rate.
+///     ~ tf (geometry_msgs::msg::TransformStamped): Publishes the tf transform from the robot base to the world frame. (Will implement in future)
 /// SUBSCRIBES:
 ///     ~ None
 /// SERVERS:
@@ -27,12 +30,18 @@
 #include "rcutils/cmdline_parser.h"
 #include "dynamixel_sdk/dynamixel_sdk.h"
 #include "std_srvs/srv/empty.hpp"
+#include "std_msgs/msg/u_int64.hpp"
+#include "tf2_ros/transform_broadcaster.hpp"
+#include <tf2/LinearMath/Quaternion.hpp>
+#include "geometry_msgs/msg/transform_stamped.hpp"
 
 // Control table address for X series
 #define ADDR_OPERATING_MODE 11
 #define ADDR_TORQUE_ENABLE 64
 #define ADDR_GOAL_POSITION 116
 #define ADDR_PRESENT_POSITION 132
+#define ADDR_PROFILE_ACCELERATION 108
+#define ADDR_PROFILE_VELOCITY     112
 
 // Protocol version
 #define PROTOCOL_VERSION 2.0  // Default Protocol version of DYNAMIXEL X series.
@@ -40,6 +49,15 @@
 // USB Connection Settings:
 #define BAUDRATE 57600  // Default Baudrate of DYNAMIXEL X series
 #define DEVICE_NAME "/dev/ttyUSB0"  // [Linux]: "/dev/ttyUSB*", [Windows]: "COM*"
+
+// Create a State Controller:
+enum class RobotState {
+    STANDING,
+    SITTING,
+    KNEELING,
+    LYING,
+    WAITING
+};
 
 class StaticPositionNode : public rclcpp::Node {
 public:
@@ -74,8 +92,13 @@ public:
         // Wait for Connection: 
         rclcpp::sleep_for(std::chrono::seconds(2));
         for (const auto& motor_id: motor_ids_) {
+            // Small delay between motor setups (avoids bus overload)
+            rclcpp::sleep_for(std::chrono::milliseconds(50));
             setupDynamixel(static_cast<uint8_t>(motor_id));
         }
+
+        // Initialize the timer: 
+        timer_ = this->create_wall_timer(std::chrono::milliseconds(static_cast<int>(1000 / rate)), timer_callback);
 
         // Initialize the Services:
         // Stand Service:
@@ -99,13 +122,189 @@ public:
             std::bind(&StaticPositionNode::handle_service_lie_down, this, std::placeholders::_1, std::placeholders::_2)
         );
 
-        // Initialize the robot in the standing position at startup:
-        RCLCPP_INFO(get_logger(), "Initializing robot in standing position...");
-        std::vector<double> target_angles = standing_pose_;
-        for (size_t i = 0; i < motor_ids_.size(); ++i) {
-            sleep_for(std::chrono::milliseconds(100)); // Small delay between commands (avoids bus overload)
-            command_motor_position(motor_ids_[i], target_angles[i]);
+        // Initialize the Publisher:
+        joint_state_pub_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
+        // Initialize the ~/timestep Publisher:
+        timestep_publisher_ = this->create_publisher<std_msgs::msg::UInt64>("~/timestep", 10);
+        
+        auto timer_callback = [this, rate]() -> void {
+
+            // ---- Print once ----
+            RCLCPP_INFO_STREAM_ONCE(this->get_logger(),
+                                    "The Timer rate is " << rate << " Hz!");
+
+            // ---- Publish timestep ----
+            std_msgs::msg::UInt64 message;
+            message.data = timestep_++;
+            timestep_publisher_->publish(message);
+
+            // ---- 1. Read raw encoder ticks ----
+            std::vector<int32_t> raw_ticks = ReadAllMotorPosition();
+
+            if (raw_ticks.size() != motor_ids_.size()) {
+                RCLCPP_ERROR(this->get_logger(),
+                            "ReadAllMotorPosition returned wrong size!");
+                return;
+            }
+
+            // ---- 2. Convert encoder ticks -> joint radians ----
+            std::vector<double> current_joints(motor_ids_.size());
+
+            for (size_t i = 0; i < motor_ids_.size(); ++i)
+            {
+                // Apply offset in encoder space
+                int32_t corrected_ticks =
+                    raw_ticks[i] + motor_offsets_[i];   // (+) must match your command math
+
+                // Convert to radians
+                current_joints[i] = ticks_to_radians(corrected_ticks);
+            }
+
+            // ---- 3. Determine target joint angles (radians) ----
+            std::vector<double> target_joints;
+
+            switch (current_state_)
+            {
+                case RobotState::STANDING:
+                    target_joints = standing_pose_;
+                    break;
+
+                case RobotState::SITTING:
+                    target_joints = sitting_pose_;
+                    break;
+
+                case RobotState::KNEELING:
+                    target_joints = kneeling_pose_;
+                    break;
+
+                case RobotState::LYING:
+                    target_joints = lying_pose_;
+                    break;
+
+                case RobotState::WAITING:
+                default:
+                    break;
+            }
+
+            // ---- 4. Publish measured joint states ----
+            sensor_msgs::msg::JointState joint_state_msg;
+            joint_state_msg.header.stamp = this->now();
+            joint_state_msg.name.resize(motor_ids_.size());
+            joint_state_msg.position = current_joints;
+
+            for (size_t i = 0; i < motor_ids_.size(); ++i) {
+                joint_state_msg.name[i] = "motor_" + std::to_string(motor_ids_[i]);
+            }
+
+            joint_state_pub_->publish(joint_state_msg);
+
+            // ---- 5. Send motor commands if not waiting ----
+            if (current_state_ != RobotState::WAITING)
+            {
+                if (target_joints.size() != motor_ids_.size()) {
+                    RCLCPP_ERROR(this->get_logger(),
+                                "Target pose size does not match motor count!");
+                    return;
+                }
+
+                for (size_t i = 0; i < motor_ids_.size(); ++i)
+                {
+                    command_motor_position(
+                        motor_ids_[i],auto timer_callback = [this, rate]() -> void {
+
+    // ---- Print once ----
+    RCLCPP_INFO_STREAM_ONCE(this->get_logger(),
+                            "The Timer rate is " << rate << " Hz!");
+
+    // ---- Publish timestep ----
+    std_msgs::msg::UInt64 message;
+    message.data = timestep_++;
+    timestep_publisher_->publish(message);
+
+    // ---- 1. Read raw encoder ticks ----
+    std::vector<int32_t> raw_ticks = ReadAllMotorPosition();
+
+    if (raw_ticks.size() != motor_ids_.size()) {
+        RCLCPP_ERROR(this->get_logger(),
+                     "ReadAllMotorPosition returned wrong size!");
+        return;
+    }
+
+    // ---- 2. Convert encoder ticks -> joint radians ----
+    std::vector<double> current_joints(motor_ids_.size());
+
+    for (size_t i = 0; i < motor_ids_.size(); ++i)
+    {
+        // Apply offset in encoder space
+        int32_t corrected_ticks =
+            raw_ticks[i] + motor_offsets_[i];   // (+) must match your command math
+
+        // Convert to radians
+        current_joints[i] = ticks_to_radians(corrected_ticks);
+    }
+
+    // ---- 3. Determine target joint angles (radians) ----
+    std::vector<double> target_joints;
+
+    switch (current_state_)
+    {
+        case RobotState::STANDING:
+            target_joints = standing_pose_;
+            break;
+
+        case RobotState::SITTING:
+            target_joints = sitting_pose_;
+            break;
+
+        case RobotState::KNEELING:
+            target_joints = kneeling_pose_;
+            break;
+
+        case RobotState::LYING:
+            target_joints = lying_pose_;
+            break;
+
+        case RobotState::WAITING:
+        default:
+            break;
+    }
+
+    // ---- 4. Publish measured joint states ----
+    sensor_msgs::msg::JointState joint_state_msg;
+    joint_state_msg.header.stamp = this->now();
+    joint_state_msg.name.resize(motor_ids_.size());
+    joint_state_msg.position = current_joints;
+
+    for (size_t i = 0; i < motor_ids_.size(); ++i) {
+        joint_state_msg.name[i] = "motor_" + std::to_string(motor_ids_[i]);
+    }
+
+    joint_state_pub_->publish(joint_state_msg);
+
+    // ---- 5. Send motor commands if not waiting ----
+    if (current_state_ != RobotState::WAITING)
+    {
+        if (target_joints.size() != motor_ids_.size()) {
+            RCLCPP_ERROR(this->get_logger(),
+                         "Target pose size does not match motor count!");
+            return;
         }
+
+        for (size_t i = 0; i < motor_ids_.size(); ++i)
+        {
+            command_motor_position(
+                motor_ids_[i],
+                target_joints[i]   // radians
+            );
+        }
+    }
+};
+
+                        target_joints[i]   // radians
+                    );
+                }
+            }
+        };
     }
 
     private:
@@ -122,11 +321,11 @@ public:
             int dxl_comm_result = COMM_TX_FAIL;
             uint8_t dxl_error = 0;
 
-            // // Disable torque
-            // dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, dxl_id, ADDR_TORQUE_ENABLE, 0, &dxl_error);
-            // if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
-            //     RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to disable torque for motor " << int(dxl_id));
-            // }
+            // Disable torque
+            dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, dxl_id, ADDR_TORQUE_ENABLE, 0, &dxl_error);
+            if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to disable torque for motor " << int(dxl_id));
+            }
 
             // Set operating mode to Position Control
             dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, dxl_id, ADDR_OPERATING_MODE, 3, &dxl_error);
@@ -141,6 +340,53 @@ public:
             } else {
                 RCLCPP_INFO_STREAM(this->get_logger(), "Motor " << int(dxl_id) << " ready in Position Control Mode.");
             }
+
+            // Turn on Acceleration and Velocity Profiles:
+            // Set Profile Acceleration
+            dxl_comm_result = packetHandler->write4ByteTxRx(
+                portHandler,
+                dxl_id,
+                ADDR_PROFILE_ACCELERATION,
+                profile_acceleration_,
+                &dxl_error
+            );
+
+            // Set Profile Velocity
+            dxl_comm_result = packetHandler->write4ByteTxRx(
+                portHandler,
+                dxl_id,
+                ADDR_PROFILE_VELOCITY,
+                profile_velocity_,
+                &dxl_error
+            );
+
+            rclcpp::sleep_for(std::chrono::milliseconds(50)); // Small delay after setup
+        }
+
+        // Get current Motor Positions:
+        std::vector<double> ReadAllMotorPosition(){
+            std::vector<double> positions;
+            for (const auto& motor_id: motor_ids_) {
+                int32_t present_position = 0;
+                uint8_t dxl_error = 0;
+
+                auto dxl_comm_result = packetHandler->read4ByteTxRx(
+                    portHandler,
+                    static_cast<uint8_t>(motor_id),
+                    ADDR_PRESENT_POSITION,
+                    reinterpret_cast<uint32_t*>(&present_position),
+                    &dxl_error
+                );
+
+                if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to read position for motor " << motor_id);
+                    positions.push_back(0.0); // Default to 0 on error
+                } else {
+                    double position_rad = ticks_to_radians(present_position - motor_offset_map_[motor_id]);
+                    positions.push_back(position_rad);
+                }
+            }
+            return positions;
         }
 
         // Motor Command Function:
@@ -181,13 +427,8 @@ public:
 
             RCLCPP_INFO(get_logger(), "Received stand command, moving to static position...");
 
-            // Define the target joint angles for standing position:
-            std::vector<double> target_angles = standing_pose_;
-
-            // Command the motors to move to the target angles:
-            for (size_t i = 0; i < motor_ids_.size(); ++i) {
-                command_motor_position(motor_ids_[i], target_angles[i]);
-            }
+            // Set the State:
+            current_state_ = RobotState::STANDING;
         }
         void handle_service_sit(const std::shared_ptr<std_srvs::srv::Empty::Request> request,
             std::shared_ptr<std_srvs::srv::Empty::Response> response)
@@ -198,13 +439,8 @@ public:
 
             RCLCPP_INFO(get_logger(), "Received sit command, moving to static position...");
 
-            // Define the target joint angles for sitting position:
-            std::vector<double> target_angles = sitting_pose_;
-
-            // Command the motors to move to the target angles:
-            for (size_t i = 0; i < motor_ids_.size(); ++i) {
-                command_motor_position(motor_ids_[i], target_angles[i]);
-            }
+            // Set the State:
+            current_state_ = RobotState::SITTING;
         }
         void handle_service_kneel(const std::shared_ptr<std_srvs::srv::Empty::Request> request,
             std::shared_ptr<std_srvs::srv::Empty::Response> response)
@@ -215,13 +451,8 @@ public:
 
             RCLCPP_INFO(get_logger(), "Received kneel command, moving to static position...");
 
-            // Define the target joint angles for kneeling position:
-            std::vector<double> target_angles = kneeling_pose_;
-
-            // Command the motors to move to the target angles:
-            for (size_t i = 0; i < motor_ids_.size(); ++i) {
-                command_motor_position(motor_ids_[i], target_angles[i]);
-            }
+            // Set the State:
+            current_state_ = RobotState::KNEELING;
         }
         void handle_service_lie_down(const std::shared_ptr<std_srvs::srv::Empty::Request> request,
             std::shared_ptr<std_srvs::srv::Empty::Response> response)
@@ -232,13 +463,8 @@ public:
 
             RCLCPP_INFO(get_logger(), "Received lie down command, moving to static position...");
 
-            // Define the target joint angles for lying down position:
-            std::vector<double> target_angles = lying_pose_;
-
-            // Command the motors to move to the target angles:
-            for (size_t i = 0; i < motor_ids_.size(); ++i) {
-                command_motor_position(motor_ids_[i], target_angles[i]);
-            }
+            // Set the State:
+            current_state_ = RobotState::LYING;
         }
 
         // Initialize ROS 2 Services:
@@ -246,6 +472,11 @@ public:
         rclcpp::Service<std_srvs::srv::Empty>::SharedPtr sit_service_;
         rclcpp::Service<std_srvs::srv::Empty>::SharedPtr kneel_service_;
         rclcpp::Service<std_srvs::srv::Empty>::SharedPtr lie_down_service_;
+        rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_pub_;
+        rclcpp::Publisher<std_msgs::msg::UInt64>::SharedPtr timestep_publisher_;
+
+        // Initialize the timer:
+        rclcpp::TimerBase::SharedPtr timer_;
 
         // Declare parameters
         // Initialization of motor id list:
@@ -256,6 +487,14 @@ public:
         int eticks_per_rad_ = this->declare_parameter<int>("encode_ticks_per_rad", 652);
         // Set the max encoder value parameter:
         int max_encoder_value_ = this->declare_parameter<int>("max_encoder_value", 4096);
+        // Set the profile velocity and acceleration parameters:
+        int profile_velocity_ = this->declare_parameter<int>("profile_velocity", 80);
+        int profile_acceleration_ = this->declare_parameter<int>("profile_acceleration", 30);
+
+        // Set the timer frequency:
+        double rate = this->declare_parameter<double>("frequency", 100.0);
+        // Initialize a timestep counter for the timer:
+        uint64_t timestep_ = 0;
 
         // Initialize Motor Offset Map:
         std::unordered_map<int, int> motor_offset_map_;
@@ -269,6 +508,12 @@ public:
         // Initializzation of Port Handlers:
         dynamixel::PortHandler * portHandler;
         dynamixel::PacketHandler * packetHandler;
+
+        // Initialize State Controller:
+        RobotState current_state_ = RobotState::WAITING;
+
+        // Track Current Motor Positions:
+        std::vector<double> current_motor_positions_ = {};
 };
 
 int main(int argc, char * argv[])
