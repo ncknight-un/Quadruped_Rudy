@@ -19,6 +19,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 # Link Libraries:
 add_executable(calibration_node src/calibrate.cpp)
@@ -34,6 +35,9 @@ target_link_libraries(static_position_node PUBLIC
   dynamixel_sdk::dynamixel_sdk
   yaml-cpp::yaml-cpp
   std_srvs::std_srvs__rosidl_typesupport_cpp
+  std_msgs::std_msgs__rosidl_typesupport_cpp
+  tf2_ros::tf2_ros 
+  sensor_msgs::sensor_msgs__rosidl_typesupport_cpp
 )
 
 install(TARGETS

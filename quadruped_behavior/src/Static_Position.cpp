@@ -31,6 +31,7 @@
 #include "dynamixel_sdk/dynamixel_sdk.h"
 #include "std_srvs/srv/empty.hpp"
 #include "std_msgs/msg/u_int64.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
 #include "tf2_ros/transform_broadcaster.hpp"
 #include <tf2/LinearMath/Quaternion.hpp>
 #include "geometry_msgs/msg/transform_stamped.hpp"
@@ -97,9 +98,6 @@ public:
             setupDynamixel(static_cast<uint8_t>(motor_id));
         }
 
-        // Initialize the timer: 
-        timer_ = this->create_wall_timer(std::chrono::milliseconds(static_cast<int>(1000 / rate)), timer_callback);
-
         // Initialize the Services:
         // Stand Service:
         stand_service_ = this->create_service<std_srvs::srv::Empty>(
@@ -127,27 +125,25 @@ public:
         // Initialize the ~/timestep Publisher:
         timestep_publisher_ = this->create_publisher<std_msgs::msg::UInt64>("~/timestep", 10);
         
-        auto timer_callback = [this, rate]() -> void {
+        auto timer_callback = [this]() -> void {
 
-            // ---- Print once ----
-            RCLCPP_INFO_STREAM_ONCE(this->get_logger(),
-                                    "The Timer rate is " << rate << " Hz!");
+            // Print Once:
+            RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "The Timer rate is " << rate_ << " Hz!");
 
-            // ---- Publish timestep ----
+            // Publish the timestep:
             std_msgs::msg::UInt64 message;
             message.data = timestep_++;
             timestep_publisher_->publish(message);
 
-            // ---- 1. Read raw encoder ticks ----
+            // Read Raw Encode Ticks from Motors:
             std::vector<int32_t> raw_ticks = ReadAllMotorPosition();
 
             if (raw_ticks.size() != motor_ids_.size()) {
-                RCLCPP_ERROR(this->get_logger(),
-                            "ReadAllMotorPosition returned wrong size!");
+                RCLCPP_ERROR(this->get_logger(), "ReadAllMotorPosition returned wrong size!");
                 return;
             }
 
-            // ---- 2. Convert encoder ticks -> joint radians ----
+            // Convert encoder ticks -> joint radians
             std::vector<double> current_joints(motor_ids_.size());
 
             for (size_t i = 0; i < motor_ids_.size(); ++i)
@@ -160,7 +156,7 @@ public:
                 current_joints[i] = ticks_to_radians(corrected_ticks);
             }
 
-            // ---- 3. Determine target joint angles (radians) ----
+            // Determine target joint angles (radians)
             std::vector<double> target_joints;
 
             switch (current_state_)
@@ -186,7 +182,7 @@ public:
                     break;
             }
 
-            // ---- 4. Publish measured joint states ----
+            // 4. Publish measured joint states
             sensor_msgs::msg::JointState joint_state_msg;
             joint_state_msg.header.stamp = this->now();
             joint_state_msg.name.resize(motor_ids_.size());
@@ -198,7 +194,7 @@ public:
 
             joint_state_pub_->publish(joint_state_msg);
 
-            // ---- 5. Send motor commands if not waiting ----
+            // Send motor commands if not waiting
             if (current_state_ != RobotState::WAITING)
             {
                 if (target_joints.size() != motor_ids_.size()) {
@@ -210,101 +206,16 @@ public:
                 for (size_t i = 0; i < motor_ids_.size(); ++i)
                 {
                     command_motor_position(
-                        motor_ids_[i],auto timer_callback = [this, rate]() -> void {
-
-    // ---- Print once ----
-    RCLCPP_INFO_STREAM_ONCE(this->get_logger(),
-                            "The Timer rate is " << rate << " Hz!");
-
-    // ---- Publish timestep ----
-    std_msgs::msg::UInt64 message;
-    message.data = timestep_++;
-    timestep_publisher_->publish(message);
-
-    // ---- 1. Read raw encoder ticks ----
-    std::vector<int32_t> raw_ticks = ReadAllMotorPosition();
-
-    if (raw_ticks.size() != motor_ids_.size()) {
-        RCLCPP_ERROR(this->get_logger(),
-                     "ReadAllMotorPosition returned wrong size!");
-        return;
-    }
-
-    // ---- 2. Convert encoder ticks -> joint radians ----
-    std::vector<double> current_joints(motor_ids_.size());
-
-    for (size_t i = 0; i < motor_ids_.size(); ++i)
-    {
-        // Apply offset in encoder space
-        int32_t corrected_ticks =
-            raw_ticks[i] + motor_offsets_[i];   // (+) must match your command math
-
-        // Convert to radians
-        current_joints[i] = ticks_to_radians(corrected_ticks);
-    }
-
-    // ---- 3. Determine target joint angles (radians) ----
-    std::vector<double> target_joints;
-
-    switch (current_state_)
-    {
-        case RobotState::STANDING:
-            target_joints = standing_pose_;
-            break;
-
-        case RobotState::SITTING:
-            target_joints = sitting_pose_;
-            break;
-
-        case RobotState::KNEELING:
-            target_joints = kneeling_pose_;
-            break;
-
-        case RobotState::LYING:
-            target_joints = lying_pose_;
-            break;
-
-        case RobotState::WAITING:
-        default:
-            break;
-    }
-
-    // ---- 4. Publish measured joint states ----
-    sensor_msgs::msg::JointState joint_state_msg;
-    joint_state_msg.header.stamp = this->now();
-    joint_state_msg.name.resize(motor_ids_.size());
-    joint_state_msg.position = current_joints;
-
-    for (size_t i = 0; i < motor_ids_.size(); ++i) {
-        joint_state_msg.name[i] = "motor_" + std::to_string(motor_ids_[i]);
-    }
-
-    joint_state_pub_->publish(joint_state_msg);
-
-    // ---- 5. Send motor commands if not waiting ----
-    if (current_state_ != RobotState::WAITING)
-    {
-        if (target_joints.size() != motor_ids_.size()) {
-            RCLCPP_ERROR(this->get_logger(),
-                         "Target pose size does not match motor count!");
-            return;
-        }
-
-        for (size_t i = 0; i < motor_ids_.size(); ++i)
-        {
-            command_motor_position(
-                motor_ids_[i],
-                target_joints[i]   // radians
-            );
-        }
-    }
-};
-
+                        motor_ids_[i],
                         target_joints[i]   // radians
                     );
                 }
             }
         };
+
+        // Initialize the timer: 
+        timer_ = this->create_wall_timer(std::chrono::milliseconds(static_cast<int>(1000 / rate_)), timer_callback);
+
     }
 
     private:
@@ -364,8 +275,8 @@ public:
         }
 
         // Get current Motor Positions:
-        std::vector<double> ReadAllMotorPosition(){
-            std::vector<double> positions;
+        std::vector<int32_t> ReadAllMotorPosition(){
+            std::vector<int32_t> positions;
             for (const auto& motor_id: motor_ids_) {
                 int32_t present_position = 0;
                 uint8_t dxl_error = 0;
@@ -492,7 +403,7 @@ public:
         int profile_acceleration_ = this->declare_parameter<int>("profile_acceleration", 30);
 
         // Set the timer frequency:
-        double rate = this->declare_parameter<double>("frequency", 100.0);
+        double rate_ = this->declare_parameter<double>("frequency", 100.0);
         // Initialize a timestep counter for the timer:
         uint64_t timestep_ = 0;
 
