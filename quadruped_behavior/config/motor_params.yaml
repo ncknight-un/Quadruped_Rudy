@@ -1,8 +1,8 @@
 /**:
   ros__parameters:
-    motor_ids: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17]
-    motor_calib_offsets: [4076, 1020, 2015, 3052, 3081, 988, 1522, -23, 2053, 3054, 3073, 2059, 4086, 1003]
+    motor_ids: [1,2,11,3,4,13,5,6,15,7,8,17,9,10]
+    motor_calib_offsets: [1472, 2064, 3071, 3058, 1009, 2040, 2000, 3073, 3080, 1047, 1027, 1018, 2037, 3020]
     encode_ticks_per_rad: 652
     max_encoder_value: 4095
-    profile_velocity: 80
+    profile_velocity: 120
     profile_acceleration: 30

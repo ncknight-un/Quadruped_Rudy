@@ -119,6 +119,11 @@ public:
             "lie_down",
             std::bind(&StaticPositionNode::handle_service_lie_down, this, std::placeholders::_1, std::placeholders::_2)
         );
+        // Reset Torque Service:
+        reset_torque_service_ = this->create_service<std_srvs::srv::Empty>(
+            "reset_torque",
+            std::bind(&StaticPositionNode::handle_service_reset_torque, this, std::placeholders::_1, std::placeholders::_2)
+        );
 
         // Initialize the Publisher:
         joint_state_pub_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
@@ -139,6 +144,13 @@ public:
             // NOTE: Offset is applied in ReadAllMotorPosition Function.
             std::vector<int32_t> calibrated_ticks = ReadAllMotorPosition();
 
+            // If this is first loop, set the last_motor_ticks_ to the current position to avoid large jumps on first command:
+            if (last_motor_ticks_.empty()) {
+                for (size_t i = 0; i < motor_ids_.size(); ++i) {
+                    last_motor_ticks_[motor_ids_[i]] = calibrated_ticks[i];
+                }
+            }
+
             if (calibrated_ticks.size() != motor_ids_.size()) {
                 RCLCPP_ERROR(this->get_logger(), "ReadAllMotorPosition returned wrong size!");
                 return;
@@ -150,9 +162,6 @@ public:
             for (size_t i = 0; i < motor_ids_.size(); ++i) {
                 // Convert to radians for current joint position:
                 current_joints[i] = ticks_to_radians(calibrated_ticks[i]);
-                // if(current_state_ == RobotState::STANDING) {
-                //     RCLCPP_INFO_STREAM(this->get_logger(), "Current Motor ID: " << motor_ids_[i] << " | Calibrated Ticks: " << calibrated_ticks[i] << " | Current Angle (rad): " << current_joints[i]);
-                // }
             }
 
             // Determine target joint angles (radians)
@@ -208,60 +217,103 @@ public:
                                                         (current_state_ == RobotState::LYING ? "LYING" : "WAITING")))));
                     for (size_t i = 0; i < motor_ids_.size(); ++i) {
                         RCLCPP_INFO_STREAM(this->get_logger(), "Target Motor ID: " << motor_ids_[i] << " | Target Angle (rad): " << target_joints[i]);
+                        command_motor_position(motor_ids_[i], target_joints[i]);
+                        rclcpp::sleep_for(std::chrono::milliseconds(40)); // Small delay to avoid overloading the bus.
                     }
                     last_state = current_state_;
-                }
-                for (size_t i = 0; i < motor_ids_.size(); ++i) {
-                    command_motor_position(motor_ids_[i], target_joints[i]);
-                    rclcpp::sleep_for(std::chrono::milliseconds(5)); // Small delay to avoid overloading the bus.
+                    rclcpp::sleep_for(std::chrono::milliseconds(100)); // Small delay after commanding new state before next timer callback.
                 }
             }
         };
 
         // Initialize the timer: 
         timer_ = this->create_wall_timer(std::chrono::milliseconds(static_cast<int>(1000 / rate_)), timer_callback);
-
     }
 
     private:
         // Motor encode ticks to radians:
         double ticks_to_radians(int32_t ticks) {
-            return static_cast<double>(ticks) * (2 * std::numbers::pi) / eticks_per_rad_;
+            return static_cast<double>(ticks) / eticks_per_rad_;
         }
         // Motor radians to encode ticks:
         int radians_to_ticks(double radians) {
-            return static_cast<int32_t>(radians * eticks_per_rad_ / (2 * std::numbers::pi));
+            return static_cast<int32_t>(radians * eticks_per_rad_);
         }
+        // ############################### Begin_Citation [Angle Normalization Function] ###############################
+        // Function to wrap target angle from 0 to 2Pi:
+        constexpr double normalize_angle_0_2pi(double rad)
+        {
+            using std::numbers::pi;
+            rad = std::fmod(rad, 2.0 * pi);  // wrap to [-2*pi, 2*pi]
+
+            if (rad < 0.0) {
+                rad += 2.0 * pi;            // shift negative angles into [0, 2*pi)
+            }
+
+            return rad;
+        }
+        // ############################### End_Citation [Angle Normalization Function] ###############################
 
         void setupDynamixel(uint8_t dxl_id) {
             int dxl_comm_result = COMM_TX_FAIL;
             uint8_t dxl_error = 0;
 
-            // Disable torque at shutdown:
-            dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, dxl_id, ADDR_TORQUE_ENABLE, 0, &dxl_error);
-            if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
-                RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to disable torque for motor " << int(dxl_id));
-            } else {
-                RCLCPP_INFO_STREAM(this->get_logger(), "Torque disabled for motor " << int(dxl_id));
+            // Disable torque
+            dxl_comm_result = packetHandler->write1ByteTxRx(
+                portHandler, dxl_id, ADDR_TORQUE_ENABLE, 0, &dxl_error);
+
+            if (dxl_comm_result != COMM_SUCCESS) {
+                RCLCPP_ERROR_STREAM(this->get_logger(),
+                    "Comm failed while disabling torque for motor " << int(dxl_id));
+                return;
             }
 
-            // Set operating mode to Position Control
-            dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, dxl_id, ADDR_OPERATING_MODE, 3, &dxl_error);
-            if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
-                RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to set Position Control Mode for motor " << int(dxl_id));
+            RCLCPP_INFO_STREAM(this->get_logger(),
+                "Torque disabled for motor " << int(dxl_id));
+
+            // Allow hardware to settle (critical for XC430)
+            rclcpp::sleep_for(std::chrono::milliseconds(20));
+
+            // Set operating mode (Position Control = 3)
+            dxl_comm_result = packetHandler->write1ByteTxRx(
+                portHandler, dxl_id, ADDR_OPERATING_MODE, 3, &dxl_error);
+
+            if (dxl_comm_result != COMM_SUCCESS) {
+                RCLCPP_ERROR_STREAM(this->get_logger(),
+                    "Comm failed while setting mode for motor " << int(dxl_id));
+                return;
             }
+
+            // Verify mode by reading it back
+            uint8_t mode_read = 0;
+            dxl_comm_result = packetHandler->read1ByteTxRx(
+                portHandler, dxl_id, ADDR_OPERATING_MODE, &mode_read, &dxl_error);
+
+            if (dxl_comm_result != COMM_SUCCESS || mode_read != 3) {
+                RCLCPP_ERROR_STREAM(this->get_logger(),
+                    "Mode NOT set correctly for motor " << int(dxl_id)
+                    << " (read: " << int(mode_read) << ")");
+                return;
+            }
+
+            RCLCPP_INFO_STREAM(this->get_logger(),
+                "Motor " << int(dxl_id) << " in Position Control Mode");
+
+            // Small delay before re-enabling torque
+            rclcpp::sleep_for(std::chrono::milliseconds(10));
 
             // Enable torque
-            dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, dxl_id, ADDR_TORQUE_ENABLE, 1, &dxl_error);
-            if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
-                RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to enable torque for motor " << int(dxl_id));
-            } else {
-                RCLCPP_INFO_STREAM(this->get_logger(), "Motor " << int(dxl_id) << " ready in Position Control Mode.");
+            dxl_comm_result = packetHandler->write1ByteTxRx(
+                portHandler, dxl_id, ADDR_TORQUE_ENABLE, 1, &dxl_error);
+
+            if (dxl_comm_result != COMM_SUCCESS) {
+                RCLCPP_ERROR_STREAM(this->get_logger(),
+                    "Failed to enable torque for motor " << int(dxl_id));
+                return;
             }
 
-            // Turn on Acceleration and Velocity Profiles:
-            // Set Profile Acceleration
-            dxl_comm_result = packetHandler->write4ByteTxRx(
+            // Set motion profiles (non-critical → don't fail hard)
+            packetHandler->write4ByteTxRx(
                 portHandler,
                 dxl_id,
                 ADDR_PROFILE_ACCELERATION,
@@ -269,8 +321,7 @@ public:
                 &dxl_error
             );
 
-            // Set Profile Velocity
-            dxl_comm_result = packetHandler->write4ByteTxRx(
+            packetHandler->write4ByteTxRx(
                 portHandler,
                 dxl_id,
                 ADDR_PROFILE_VELOCITY,
@@ -278,11 +329,15 @@ public:
                 &dxl_error
             );
 
-            rclcpp::sleep_for(std::chrono::milliseconds(50)); // Small delay after setup
+            RCLCPP_INFO_STREAM(this->get_logger(),
+                "Motor " << int(dxl_id) << " ready.");
+
+            // Final small delay
+            rclcpp::sleep_for(std::chrono::milliseconds(20));
         }
 
         // Get current Motor Positions:
-        // Returns the encoder position of each motor after applying the calibration offset.
+        // Returns the encoder position of each motor in radians.
         std::vector<int32_t> ReadAllMotorPosition(){
             std::vector<int32_t> positions;
             for (const auto& motor_id: motor_ids_) {
@@ -301,7 +356,7 @@ public:
                     RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to read position for motor " << motor_id);
                     positions.push_back(0.0); // Default to 0 on error
                 } else {
-                    double position_rad = present_position - motor_offset_map_[motor_id];
+                    double position_rad = present_position; // motor_offset_map_[motor_id];
                     positions.push_back(position_rad);
                 }
             }
@@ -309,31 +364,61 @@ public:
         }
 
         // Motor Command Function:
-        void command_motor_position(int motor_id, double target_angle) {
-            // Determine the desired position in ticks and clamp to motor limits:
-            int calibrated_target_pos = std::clamp(radians_to_ticks(target_angle)  motor_offset_map_[motor_id], 0, max_encoder_value_);
-            RCLCPP_INFO_STREAM(this->get_logger(), "Commanding Motor ID: " << motor_id << " | Target Angle (rad): " << target_angle << " | Target Position (ticks): " << calibrated_target_pos);
+        void command_motor_position(int motor_id, double target_angle_rad) {
+            // Convert target angle to encoder ticks
+            int32_t target_ticks = radians_to_ticks(normalize_angle_0_2pi(target_angle_rad));
 
-            // Send command to motor (example, adjust as needed):
+            // Apply calibration offset
+            target_ticks += motor_offset_map_[motor_id];
+
+            // // Wrap target within 0 to max_encoder_value_
+            // target_ticks = (target_ticks + max_encoder_value_ + 1) % (max_encoder_value_ + 1);
+
+            // Read current motor position
+            uint32_t current_ticks = 0;
             uint8_t dxl_error = 0;
-
-            auto dxl_comm_result = packetHandler->write4ByteTxRx(
+            auto dxl_comm_result = packetHandler->read4ByteTxRx(
                 portHandler,
-                motor_id,
-                ADDR_GOAL_POSITION,
-                static_cast<uint32_t>(calibrated_target_pos),
+                static_cast<uint8_t>(motor_id),
+                ADDR_PRESENT_POSITION,
+                &current_ticks,
                 &dxl_error
             );
-            if (dxl_error != 0) {
-                RCLCPP_ERROR(get_logger(), "Motor error for ID %d: %d", motor_id, dxl_error);
+            if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to read current position for motor " << motor_id);
+                current_ticks = last_motor_ticks_[motor_id]; // Use last known position on read error
             }
 
+            // Compute delta in circular encoder space
+            int32_t delta = static_cast<int32_t>(target_ticks) - static_cast<int32_t>(current_ticks);
+            int32_t half_range = (max_encoder_value_ + 1) / 2;
+
+            // Wrap delta to [-half_range, +half_range]
+            if (delta > half_range) delta -= (max_encoder_value_ + 1);
+            if (delta < -half_range) delta += (max_encoder_value_ + 1);
+
+            // Compute final target and wrap it into [0, max_encoder_value_]
+            int32_t final_target = (current_ticks + delta + max_encoder_value_ + 1) % (max_encoder_value_ + 1);
+
+            RCLCPP_INFO_STREAM(this->get_logger(), "Commanding Motor ID: " << motor_id
+                << " | Target Angle (rad): " << target_angle_rad
+                << " | Current Ticks: " << current_ticks
+                << " | Target Position (ticks): " << final_target);
+
+            // Send the final target to motor
+            dxl_comm_result = packetHandler->write4ByteTxRx(
+                portHandler,
+                static_cast<uint8_t>(motor_id),
+                ADDR_GOAL_POSITION,
+                static_cast<uint32_t>(final_target),
+                &dxl_error
+            );
+
             if (dxl_comm_result != COMM_SUCCESS) {
-                RCLCPP_INFO(this->get_logger(), "%s", packetHandler->getTxRxResult(dxl_comm_result));
-            } else if (dxl_error != 0) {
-                RCLCPP_INFO(this->get_logger(), "%s", packetHandler->getRxPacketError(dxl_error));
-            } else {
-                RCLCPP_INFO(this->get_logger(), "Set [ID: %d] [Goal Position: %d]", motor_id, calibrated_target_pos);
+                RCLCPP_ERROR_STREAM(this->get_logger(), "TX/RX Error: " << packetHandler->getTxRxResult(dxl_comm_result));
+            }
+            if (dxl_error != 0) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "Motor error: " << packetHandler->getRxPacketError(dxl_error));
             }
         }
 
@@ -359,7 +444,7 @@ public:
 
             RCLCPP_INFO(get_logger(), "Received sit command, moving to static position...");
 
-            // Set the State:
+            // Set the State:9
             current_state_ = RobotState::SITTING;
         }
         void handle_service_kneel(const std::shared_ptr<std_srvs::srv::Empty::Request> request,
@@ -386,12 +471,57 @@ public:
             // Set the State:
             current_state_ = RobotState::LYING;
         }
+        // Reset Torque Handler:
+        void handle_service_reset_torque(const std::shared_ptr<std_srvs::srv::Empty::Request> request,
+            std::shared_ptr<std_srvs::srv::Empty::Response> response) {
+            // Ignore Request and Response:
+            (void)request;
+            (void)response;
+
+            RCLCPP_INFO(get_logger(), "Received reset torque command, disabling torque on all motors...");
+            // Disable torque on all motors:
+            for (const auto& motor_id: motor_ids_) {
+                uint8_t dxl_error = 0;
+                auto dxl_comm_result = packetHandler->write1ByteTxRx(
+                    portHandler,
+                    static_cast<uint8_t>(motor_id),
+                    ADDR_TORQUE_ENABLE,
+                    0,
+                    &dxl_error
+                );
+                if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to disable torque for motor " << motor_id);
+                } else {
+                    RCLCPP_INFO_STREAM(this->get_logger(), "Torque disabled for motor " << motor_id);
+                }
+                rclcpp::sleep_for(std::chrono::milliseconds(50)); // Small delay between motor commands
+            }
+            // Turn Torque back on after reset and set state to WAITING:
+            for (const auto& motor_id: motor_ids_) {
+                uint8_t dxl_error = 0;
+                auto dxl_comm_result = packetHandler->write1ByteTxRx(
+                    portHandler,
+                    static_cast<uint8_t>(motor_id),
+                    ADDR_TORQUE_ENABLE,
+                    1,
+                    &dxl_error
+                );
+                if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to enable torque for motor " << motor_id);
+                } else {
+                    RCLCPP_INFO_STREAM(this->get_logger(), "Torque enabled for motor " << motor_id);
+                }
+                rclcpp::sleep_for(std::chrono::milliseconds(50)); // Small delay between motor commands
+            }
+            current_state_ = RobotState::WAITING;
+        }  
 
         // Initialize ROS 2 Services:
         rclcpp::Service<std_srvs::srv::Empty>::SharedPtr stand_service_;
         rclcpp::Service<std_srvs::srv::Empty>::SharedPtr sit_service_;
         rclcpp::Service<std_srvs::srv::Empty>::SharedPtr kneel_service_;
         rclcpp::Service<std_srvs::srv::Empty>::SharedPtr lie_down_service_;
+        rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_torque_service_;
         rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_pub_;
         rclcpp::Publisher<std_msgs::msg::UInt64>::SharedPtr timestep_publisher_;
 
@@ -412,7 +542,7 @@ public:
         int profile_acceleration_ = this->declare_parameter<int>("profile_acceleration", 30);
 
         // Set the timer frequency:
-        double rate_ = this->declare_parameter<double>("frequency", 100.0);
+        double rate_ = this->declare_parameter<double>("frequency", 20.0);
         // Initialize a timestep counter for the timer:
         uint64_t timestep_ = 0;
 
@@ -434,6 +564,9 @@ public:
 
         // Track Current Motor Positions:
         std::vector<double> current_motor_positions_ = {};
+
+        // Track Last Motor Ticks for Smooth Commanding:
+        std::unordered_map<int, int32_t> last_motor_ticks_;
 };
 
 int main(int argc, char * argv[])

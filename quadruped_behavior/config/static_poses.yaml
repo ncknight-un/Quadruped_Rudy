@@ -9,12 +9,14 @@
       1.0, 1.0, 1.0, 1.0]
 
     standing_pose:  
-      # Abad joints: neutral
-      [0.0, -0.01, 0.0, -0.01, 0.0, -0.01, 0.0, -0.01,  
-      # Head joints: forward
-      0.1, 0.05,  
-      # Knee joints: slightly extended for standing
-      0.5, -0.5, 0.5, -0.5]
+      # Input in order of leg diagram: FL, BL, BR, FR, Head
+      # Hip, Abad, knee joints for each leg, then head joints
+      [0.5, 0.0, 1.25,
+      0.5, 0.0, 1.25,
+      0.5, 0.0, -1.25,
+      0.5, 0.0, -1.25,
+      # Head joints: looking forward
+      0.0, -0.25]
 
     kneeling_pose:  
       # Abad joints: slight outward
@@ -25,9 +27,10 @@
       0.8, 0.8, 0.8, 0.8]
 
     lying_pose:  
-      # Abad joints: neutral
-      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  
-      # Head joints: down
-      -0.2, -0.2,  
-      # Knee joints: fully bent, legs relaxed
-      1.2, 1.2, 1.2, 1.2]
+      # Input in order of leg diagram: FL, BL, BR, FR, Head
+      [-1.45, 0.0, 0.0,
+      -1.45, 0.0, 0.0,
+      -1.45, 0.0, 0.0,
+      -1.45, 0.0, 0.0,
+      # Head joints: looking forward
+      0.0, -0.5]

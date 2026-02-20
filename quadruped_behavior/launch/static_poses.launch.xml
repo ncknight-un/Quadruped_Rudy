@@ -10,7 +10,6 @@
     <!-- RViz Launch-->
     <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share quadruped_behavior)/config/load_nusim_odometry.rviz" 
         if="$(eval '\'$(var use_rviz)\'==\'true\'')" on_exit="shutdown">
-        <remap from='map' to='rudy_world'/>
     </node>
 
     <!-- Load the Rudy in Simulation -->
