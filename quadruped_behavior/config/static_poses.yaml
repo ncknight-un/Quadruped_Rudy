@@ -1,36 +1,50 @@
 /**:
   ros__parameters:
-    sitting_pose:  
-      # Abad joints: slight outward rotation
-      [0.2, -0.6, 0.2, -0.6, 0.2, -0.6, 0.2, -0.6,  
-      # Head joints: looking forward
-      0.0, 0.0,  
-      # Knee joints: bent to support sitting
-      1.0, 1.0, 1.0, 1.0]
-
     standing_pose:  
-      # Input in order of leg diagram: FL, BL, BR, FR, Head
-      # Hip, Abad, knee joints for each leg, then head joints
-      [0.5, 0.0, 1.25,
-      0.5, 0.0, 1.25,
-      0.5, 0.0, -1.25,
-      0.5, 0.0, -1.25,
+      # Input in order of leg diagram: BL, BR, FL, FR,  Head
+      # Knee, Hip, Abad joints for each leg, then head joints
+      # back legs first
+      [1.25, 0.785, 0.0,
+      -1.25, 0.785, 0.0,
+       1.25, 0.785, 0.0,
+      -1.25, 0.785, 0.0,
       # Head joints: looking forward
       0.0, -0.25]
 
-    kneeling_pose:  
-      # Abad joints: slight outward
-      [0.1, -0.3, 0.1, -0.3, 0.1, -0.3, 0.1, -0.3,  
-      # Head joints
-      0.0, 0.0,  
-      # Knee joints: bent more than standing but less than sitting
-      0.8, 0.8, 0.8, 0.8]
-
     lying_pose:  
       # Input in order of leg diagram: FL, BL, BR, FR, Head
-      [-1.45, 0.0, 0.0,
-      -1.45, 0.0, 0.0,
-      -1.45, 0.0, 0.0,
-      -1.45, 0.0, 0.0,
+      [0.35,-1.0, 0.0, 
+      -0.35,-1.0, 0.0,
+      -0.2,-1.45, 0.0, 
+      0.2,-1.45, 0.0,
       # Head joints: looking forward
-      0.0, -0.5]
+      0.0, -0.2]
+
+    paw_pose:  
+      # Input in order of leg diagram: FL, BL, BR, FR, Head
+      # Knee, Hip, Abad joints for each leg, then head joints
+      # back legs first
+      [2.0, 0.785, 0.1,
+      -2.0, 0.785, -0.1,
+       1.5, 0.785, 0.1,
+      -1.25, -0.785, -0.1,
+      # Head joints: looking forward
+      0.0, -0.25]
+
+    sitting_pose:  
+      # Input in order of leg diagram: FL, BL, BR, FR, Head
+      [0.9,-0.5, 0.0, 
+      -0.9,-0.5, 0.0,
+      0.785,0.0, 0.0, 
+      -0.785,0.0, 0.0,
+      # Head joints: looking forward
+      0.0, 0.1]
+
+    kneeling_pose:  
+      # Input in order of leg diagram: FL, BL, BR, FR, Head
+      [0.785,0.0, 0.0, 
+      -0.785,0.0, 0.0,
+      -0.2,-1.45, 0.0, 
+      0.2,-1.45, 0.0,
+      # Head joints: looking forward
+      0.0, -1.0]

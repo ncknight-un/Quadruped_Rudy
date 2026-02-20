@@ -16,6 +16,7 @@
 ///     ~ sit (std_srvs::srv::Empty): Commands the robot to sit in a default static position.
 ///     ~ kneel (std_srvs::srv::Empty): Commands the robot to kneel in a default static position.
 ///     ~ lie_down (std_srvs::srv::Empty): Commands the robot to lie down in a default static position.
+///     ~ give_paw (std_srvs::srv::Empty): Commans the robot to give a paw in a default static position.
 /// CLIENTS:
 ///     ~ None
 
@@ -57,6 +58,7 @@ enum class RobotState {
     SITTING,
     KNEELING,
     LYING,
+    GIVE_PAW,
     WAITING
 };
 
@@ -104,6 +106,11 @@ public:
             "stand",
             std::bind(&StaticPositionNode::handle_service_stand, this, std::placeholders::_1, std::placeholders::_2)
         );
+        // Give Paw Service:
+        give_paw_service_ = this->create_service<std_srvs::srv::Empty>(
+            "give_paw",
+            std::bind(&StaticPositionNode::handle_service_give_paw, this, std::placeholders::_1, std::placeholders::_2)
+        );
         // Sit Service:
         sit_service_ = this->create_service<std_srvs::srv::Empty>(
             "sit",
@@ -141,7 +148,6 @@ public:
             timestep_publisher_->publish(message);
 
             // Read Raw Encode Ticks from Motors:
-            // NOTE: Offset is applied in ReadAllMotorPosition Function.
             std::vector<int32_t> calibrated_ticks = ReadAllMotorPosition();
 
             // If this is first loop, set the last_motor_ticks_ to the current position to avoid large jumps on first command:
@@ -183,12 +189,16 @@ public:
                 case RobotState::LYING:
                     target_joints = lying_pose_;
                     break;
-
+                
+                case RobotState::GIVE_PAW:
+                    target_joints = paw_pose_;
+                    break;
                 case RobotState::WAITING:
                 default:
                     break;
             }
-
+            
+            // TODO: Map these to actual joints and publish:
             // // 4. Publish measured joint states
             // sensor_msgs::msg::JointState joint_state_msg;
             // joint_state_msg.header.stamp = this->now();
@@ -214,11 +224,12 @@ public:
                     RCLCPP_INFO_STREAM(this->get_logger(), "New State: " << (current_state_ == RobotState::STANDING ? "STANDING" :
                                                         (current_state_ == RobotState::SITTING ? "SITTING" :
                                                         (current_state_ == RobotState::KNEELING ? "KNEELING" :
-                                                        (current_state_ == RobotState::LYING ? "LYING" : "WAITING")))));
+                                                        (current_state_ == RobotState::GIVE_PAW ? "GIVE_PAW" :
+                                                        (current_state_ == RobotState::LYING ? "LYING" : "WAITING"))))));
                     for (size_t i = 0; i < motor_ids_.size(); ++i) {
                         RCLCPP_INFO_STREAM(this->get_logger(), "Target Motor ID: " << motor_ids_[i] << " | Target Angle (rad): " << target_joints[i]);
                         command_motor_position(motor_ids_[i], target_joints[i]);
-                        rclcpp::sleep_for(std::chrono::milliseconds(40)); // Small delay to avoid overloading the bus.
+                        rclcpp::sleep_for(std::chrono::milliseconds(5)); // Small delay to avoid overloading the bus.
                     }
                     last_state = current_state_;
                     rclcpp::sleep_for(std::chrono::milliseconds(100)); // Small delay after commanding new state before next timer callback.
@@ -354,9 +365,9 @@ public:
 
                 if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
                     RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to read position for motor " << motor_id);
-                    positions.push_back(0.0); // Default to 0 on error
+                    positions.push_back(0); // Default to 0 on error
                 } else {
-                    double position_rad = present_position; // motor_offset_map_[motor_id];
+                    auto position_rad = present_position; // motor_offset_map_[motor_id];
                     positions.push_back(position_rad);
                 }
             }
@@ -370,9 +381,6 @@ public:
 
             // Apply calibration offset
             target_ticks += motor_offset_map_[motor_id];
-
-            // // Wrap target within 0 to max_encoder_value_
-            // target_ticks = (target_ticks + max_encoder_value_ + 1) % (max_encoder_value_ + 1);
 
             // Read current motor position
             uint32_t current_ticks = 0;
@@ -459,6 +467,18 @@ public:
             // Set the State:
             current_state_ = RobotState::KNEELING;
         }
+        void handle_service_give_paw(const std::shared_ptr<std_srvs::srv::Empty::Request> request,
+            std::shared_ptr<std_srvs::srv::Empty::Response> response)
+        {
+            // Ignore Request and Response:
+            (void)request;
+            (void)response;
+
+            RCLCPP_INFO(get_logger(), "Received give paw command, moving to static position...");
+
+            // Set the State:
+            current_state_ = RobotState::GIVE_PAW;
+        }
         void handle_service_lie_down(const std::shared_ptr<std_srvs::srv::Empty::Request> request,
             std::shared_ptr<std_srvs::srv::Empty::Response> response)
         {
@@ -521,6 +541,7 @@ public:
         rclcpp::Service<std_srvs::srv::Empty>::SharedPtr sit_service_;
         rclcpp::Service<std_srvs::srv::Empty>::SharedPtr kneel_service_;
         rclcpp::Service<std_srvs::srv::Empty>::SharedPtr lie_down_service_;
+        rclcpp::Service<std_srvs::srv::Empty>::SharedPtr give_paw_service_;
         rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_torque_service_;
         rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_pub_;
         rclcpp::Publisher<std_msgs::msg::UInt64>::SharedPtr timestep_publisher_;
@@ -554,6 +575,7 @@ public:
         std::vector<double> sitting_pose_ = this->declare_parameter<std::vector<double>>("sitting_pose", std::vector<double>{});
         std::vector<double> kneeling_pose_ = this->declare_parameter<std::vector<double>>("kneeling_pose", std::vector<double>{});
         std::vector<double> lying_pose_ = this->declare_parameter<std::vector<double>>("lying_pose", std::vector<double>{});
+        std::vector<double> paw_pose_ = this->declare_parameter<std::vector<double>>("paw_pose", std::vector<double>{});
 
         // Initializzation of Port Handlers:
         dynamixel::PortHandler * portHandler;
