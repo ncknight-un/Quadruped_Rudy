@@ -51,7 +51,13 @@
     
     walking_pose_sequence:  
       # A sequence of poses for walking, where each pose is a vector of joint angles in the same order as above.
-      [1.25, 0.785, 0.0, # Set in standing pose
-      1.5, 0.785, 0.0, # Lift the foot.
-      1.5, 0.5, 0.0, # Move the foot forward by shifting the hip.
-      1.25, 0.5, 0.0] # Lower the foot back down to the ground.
+      # STANCE
+      [1.25, 0.785, 0.0,
+      # LIFT
+      1.5, 0.785, 0.0,
+      # SWING
+      1.5, 0.5, 0.0,
+      # ABDUCTION (Widen stance / stabilize)
+      1.5, 0.5, 0.3,   # ← increase lateral angle
+      # LAND
+      1.25, 0.5, 0.0]
