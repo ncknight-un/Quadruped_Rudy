@@ -289,10 +289,7 @@ public:
                     }
 
                     // Set the current pose to the current walking phase pose:
-                    std::vector<double> pose(
-                        pose_sequence_[walking_phase_].begin(),
-                        pose_sequence_[walking_phase_].end()
-                    );
+                    std::array<double, 3> pose = pose_sequence_[walking_phase_];
 
                     // Send pose to each leg
                     auto leg = active_leg_;
