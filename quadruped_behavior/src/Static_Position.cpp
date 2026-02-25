@@ -230,63 +230,73 @@ public:
                 
                 // If state has been changed, print the target joint angles once:
                 static RobotState last_state = RobotState::WAITING;
-                if (current_state_ != last_state) {
+                if (current_state_ != last_state && current_state_ != RobotState::WALKING) {
                     RCLCPP_INFO_STREAM(this->get_logger(), "New State: " << (current_state_ == RobotState::STANDING ? "STANDING" :
                                                         (current_state_ == RobotState::SITTING ? "SITTING" :
                                                         (current_state_ == RobotState::KNEELING ? "KNEELING" :
                                                         (current_state_ == RobotState::GIVE_PAW ? "GIVE_PAW" :
-                                                        (current_state_ == RobotState::WALKING ? "WALKING" :
-                                                        (current_state_ == RobotState::LYING ? "LYING" : "WAITING")))))));
+                                                        (current_state_ == RobotState::LYING ? "LYING" : "WAITING"))))));
 
-                    // If the state is walking, loop through the walking pose sequence:
-                if (current_state_ == RobotState::WALKING) {
-                        // Define motor ids for each leg
-                        std::vector<std::vector<int64_t>> legs = {
-                            {motor_ids_[0],  motor_ids_[1],  motor_ids_[2]},   // BL
-                            {motor_ids_[3],  motor_ids_[4],  motor_ids_[5]},   // BR
-                            {motor_ids_[6],  motor_ids_[7],  motor_ids_[8]},   // FL
-                            {motor_ids_[9],  motor_ids_[10], motor_ids_[11]}   // FR
-                        };
-
-                        int joints_per_leg = 3;
-                        int num_phases = walking_pose_sequence_.size() / joints_per_leg;
-
-                        for (int phase = 0; phase < num_phases; ++phase) {
-                            // Extract one phase pose safely
-                            std::vector<double> pose(
-                                walking_pose_sequence_.begin() + phase * joints_per_leg,
-                                walking_pose_sequence_.begin() + (phase + 1) * joints_per_leg
-                            );
-
-                            // Send pose to each leg
-                            for (size_t leg = 0; leg < legs.size(); ++leg) {
-                                const auto& motor_ids = legs[leg];
-
-                                if (pose.size() != motor_ids.size()) {
-                                    RCLCPP_ERROR_STREAM(this->get_logger(), "Pose size does not match motor count for leg " << leg);
-                                    continue;
-                                }
-
-                                for (size_t j = 0; j < motor_ids.size(); ++j) {
-                                    command_motor_position(motor_ids[j], pose[j]);
-                                }
-                            }
-
-                            rclcpp::sleep_for(std::chrono::milliseconds(50));
-                        }
-
-                        last_state = current_state_;
+                    // Command the robot to the static pose:
+                    for (size_t i = 0; i < motor_ids_.size(); ++i) {
+                        RCLCPP_DEBUG_STREAM(this->get_logger(), "Target Motor ID: " << motor_ids_[i] << " | Target Angle (rad): " << target_joints[i]);
+                        command_motor_position(motor_ids_[i], target_joints[i]);
+                        rclcpp::sleep_for(std::chrono::milliseconds(5)); // Small delay to avoid overloading the bus.
                     }
-                    else {
-                        // Command the robot to the static pose:
+                    last_state = current_state_;
+
+                    rclcpp::sleep_for(std::chrono::milliseconds(100)); // Small delay after commanding new state before next timer callback.
+                }
+                else if(current_state_ == RobotState::WALKING) {
+                    // If the state is walking, loop through the walking pose sequence:
+                    RCLCPP_INFO_STREAM(this->get_logger(), "New State: WALKING");
+
+                    // Initialize the walk sequence at static standing: 
+                    if(current_state_ != last_state) {
                         for (size_t i = 0; i < motor_ids_.size(); ++i) {
                             RCLCPP_DEBUG_STREAM(this->get_logger(), "Target Motor ID: " << motor_ids_[i] << " | Target Angle (rad): " << target_joints[i]);
                             command_motor_position(motor_ids_[i], target_joints[i]);
                             rclcpp::sleep_for(std::chrono::milliseconds(5)); // Small delay to avoid overloading the bus.
                         }
-                        last_state = current_state_;
+                        rclcpp::sleep_for(std::chrono::milliseconds(100)); // Small delay after commanding new state before next timer callback.
                     }
-                    rclcpp::sleep_for(std::chrono::milliseconds(100)); // Small delay after commanding new state before next timer callback.
+
+                    // Define motor ids for each leg
+                    std::vector<std::vector<int64_t>> legs = {
+                        {motor_ids_[0],  motor_ids_[1],  motor_ids_[2]},   // BL
+                        {motor_ids_[3],  motor_ids_[4],  motor_ids_[5]},   // BR
+                        {motor_ids_[6],  motor_ids_[7],  motor_ids_[8]},   // FL
+                        {motor_ids_[9],  motor_ids_[10], motor_ids_[11]}   // FR
+                    };
+
+                    int joints_per_leg = 3;
+                    int num_phases = walking_pose_sequence_.size() / joints_per_leg;
+
+                    for (int phase = 0; phase < num_phases; ++phase) {
+                        // Extract one phase pose safely
+                        std::vector<double> pose(
+                            walking_pose_sequence_.begin() + phase * joints_per_leg,
+                            walking_pose_sequence_.begin() + (phase + 1) * joints_per_leg
+                        );
+
+                        // Send pose to each leg
+                        for (size_t leg = 0; leg < legs.size(); ++leg) {
+                            const auto& motor_ids = legs[leg];
+
+                            if (pose.size() != motor_ids.size()) {
+                                RCLCPP_ERROR_STREAM(this->get_logger(), "Pose size does not match motor count for leg " << leg);
+                                continue;
+                            }
+
+                            for (size_t j = 0; j < motor_ids.size(); ++j) {
+                                command_motor_position(motor_ids[j], pose[j]);
+                            }
+                        }
+
+                        rclcpp::sleep_for(std::chrono::milliseconds(50));
+                    }
+
+                    last_state = current_state_;
                 }
             }
         };
