@@ -68,6 +68,7 @@ enum Leg {
     BR = 1,
     FL = 2,
     FR = 3,
+    NUM_LEGS = 4
 };
 
 class StaticPositionNode : public rclcpp::Node {
