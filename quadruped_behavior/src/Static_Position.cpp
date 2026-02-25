@@ -64,9 +64,9 @@ enum class RobotState {
 };
 
 enum Leg {
-    BL = 0,
-    BR = 1,
-    FL = 2,
+    FL = 0,
+    BL = 1,
+    BR = 2,
     FR = 3,
     NUM_LEGS = 4
 };
@@ -285,30 +285,33 @@ public:
                     );
 
                     // Send pose to each leg
-                    for (size_t leg = 0; leg < legs_.size(); ++leg) {
-                        const auto& motor_ids = legs_[leg];
+                    auto leg = active_leg_ = 0;
+                    const auto& motor_ids = legs_[leg];
 
-                        if (pose.size() != motor_ids.size()) {
-                            RCLCPP_ERROR_STREAM(this->get_logger(), "Pose size does not match motor count for leg " << leg);
-                            continue;
-                        }
-                        
-                        // Command each motor to move:
-                        for (size_t j = 0; j < motor_ids.size(); ++j) {
-                            // If it is a right leg flip the knee joint angle:
-                            if(leg == BR || leg == FR) {
-                                if (j == 0) { // Knee joint is the first joint in the list for each leg
-                                    pose[j] = -pose[j];
-                                }
+                    if (pose.size() != motor_ids.size()) {
+                        RCLCPP_ERROR_STREAM(this->get_logger(), "Pose size does not match motor count for leg " << leg);
+                    }
+                    
+                    // Command each motor to move:
+                    for (size_t j = 0; j < motor_ids.size(); ++j) {
+                        // If it is a right leg flip the knee joint angle:
+                        if(leg == BR || leg == FR) {
+                            if (j == 0) { // Knee joint is the first joint in the list for each leg
+                                pose[j] = -pose[j];
                             }
-                            command_motor_position(motor_ids[j], pose[j]);
                         }
+                        command_motor_position(motor_ids[j], pose[j]);
                     }
 
                     rclcpp::sleep_for(std::chrono::milliseconds(50));
                     last_state = current_state_;
 
                     walking_phase_ = (walking_phase_ + 1) % num_phases; // Loop through the walking phases
+
+                    // After completing a full cycle through the legs, move to the next leg in the sequence:
+                    if (walking_phase_ == 0) {
+                        active_leg_ = (active_leg_ + 1) % NUM_LEGS;
+                    }
                 }
             }
         };
@@ -683,6 +686,7 @@ public:
         // Walking Sequence State and leg map:
         std::array<std::array<int64_t, 3>, NUM_LEGS> legs_;
         int walking_phase_ = 0;
+        int active_leg_ = 0;
 };
 
 int main(int argc, char * argv[])
