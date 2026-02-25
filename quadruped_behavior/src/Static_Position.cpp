@@ -71,6 +71,14 @@ enum Leg {
     NUM_LEGS = 4
 };
 
+enum WalkingPhase {
+    PHASE_1 = 0,
+    PHASE_2 = 1,
+    PHASE_3 = 2,
+    PHASE_4 = 3,
+    NUM_PHASES = 4
+};
+
 class StaticPositionNode : public rclcpp::Node {
 public:
     StaticPositionNode() : Node("static_position_node")
@@ -114,6 +122,12 @@ public:
         legs_[BR] = {motor_ids_[3],  motor_ids_[4],  motor_ids_[5]};
         legs_[FL] = {motor_ids_[6],  motor_ids_[7],  motor_ids_[8]};
         legs_[FR] = {motor_ids_[9],  motor_ids_[10], motor_ids_[11]};
+
+        // Initialize the walking pose sequence:
+        pose_sequence_[1] = {walking_poses_sequence_[0], walking_poses_sequence_[1], walking_poses_sequence_[2]};
+        pose_sequence_[2] = {walking_poses_sequence_[3], walking_poses_sequence_[4], walking_poses_sequence_[5]};
+        pose_sequence_[3] = {walking_poses_sequence_[6], walking_poses_sequence_[7], walking_poses_sequence_[8]};
+        pose_sequence_[4] = {walking_poses_sequence_[9], walking_poses_sequence_[10], walking_poses_sequence_[11]};
 
         // Initialize the Services:
         // Stand Service:
@@ -274,15 +288,8 @@ public:
                         }
                     }
 
-                    int joints_per_leg = 3;
-                    int num_phases = walking_pose_sequence_.size() / joints_per_leg;
-                    if (num_phases == 0) return;
-
-                    // Extract pose for current phase
-                    std::vector<double> pose(
-                        walking_pose_sequence_.begin() + walking_phase_ * joints_per_leg,
-                        walking_pose_sequence_.begin() + (walking_phase_ + 1) * joints_per_leg
-                    );
+                    // Set the current pose to the current walking phase pose:
+                    std::vector<double> pose = pose_sequence_[walking_phase_];
 
                     // Send pose to each leg
                     auto leg = active_leg_ = 0;
@@ -309,7 +316,7 @@ public:
                     walking_phase_ = (walking_phase_ + 1) % num_phases; // Loop through the walking phases
 
                     // After completing a full cycle through the legs, move to the next leg in the sequence:
-                    if (walking_phase_ == 0) {
+                    if (walking_phase_ == 3) {
                         active_leg_ = (active_leg_ + 1) % NUM_LEGS;
                     }
                 }
@@ -685,6 +692,7 @@ public:
 
         // Walking Sequence State and leg map:
         std::array<std::array<int64_t, 3>, NUM_LEGS> legs_;
+        std::array<std::array<int64_t, 3>, NUM_PHASES> pose_sequence_;
         int walking_phase_ = 0;
         int active_leg_ = 0;
 };
