@@ -4,5 +4,5 @@
     motor_calib_offsets: [2011, 2063, 2018, 2046, 2051, 2052, 2031, 2007, 2038, 2052, 2052, 2068, 2057, 2047]
     encode_ticks_per_rad: 652
     max_encoder_value: 4095
-    profile_velocity: 120
-    profile_acceleration: 30
+    profile_velocity: 60
+    profile_acceleration: 20

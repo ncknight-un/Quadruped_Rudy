@@ -48,3 +48,10 @@
       0.2,-1.45, 0.0,
       # Head joints: looking forward
       1.0, 0.0]
+    
+    walking_pose_sequence:  
+      # A sequence of poses for walking, where each pose is a vector of joint angles in the same order as above.
+      [.25, 0.785, 0.0, # Set in standing pose
+      .25, 0.785, 0.0, # Lift the foot.
+      .25, 0.785, 0.0, # Move the foot forward by shifting the hip.
+      .25, 0.785, 0.0] # Lower the foot back down to the ground.
