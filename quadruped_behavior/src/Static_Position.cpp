@@ -124,10 +124,10 @@ public:
         legs_[FR] = {motor_ids_[9],  motor_ids_[10], motor_ids_[11]};
 
         // Initialize the walking pose sequence:
-        pose_sequence_[1] = {walking_poses_sequence_[0], walking_poses_sequence_[1], walking_poses_sequence_[2]};
-        pose_sequence_[2] = {walking_poses_sequence_[3], walking_poses_sequence_[4], walking_poses_sequence_[5]};
-        pose_sequence_[3] = {walking_poses_sequence_[6], walking_poses_sequence_[7], walking_poses_sequence_[8]};
-        pose_sequence_[4] = {walking_poses_sequence_[9], walking_poses_sequence_[10], walking_poses_sequence_[11]};
+        pose_sequence_[1] = {walking_pose_sequence_[0], walking_pose_sequence_[1], walking_pose_sequence_[2]};
+        pose_sequence_[2] = {walking_pose_sequence_[3], walking_pose_sequence_[4], walking_pose_sequence_[5]};
+        pose_sequence_[3] = {walking_pose_sequence_[6], walking_pose_sequence_[7], walking_pose_sequence_[8]};
+        pose_sequence_[4] = {walking_pose_sequence_[9], walking_pose_sequence_[10], walking_pose_sequence_[11]};
 
         // Initialize the Services:
         // Stand Service:
@@ -289,7 +289,10 @@ public:
                     }
 
                     // Set the current pose to the current walking phase pose:
-                    std::vector<double> pose = pose_sequence_[walking_phase_];
+                    std::vector<double> pose(
+                        pose_sequence_[walking_phase_].begin(),
+                        pose_sequence_[walking_phase_].end()
+                    );
 
                     // Send pose to each leg
                     auto leg = active_leg_ = 0;
@@ -313,7 +316,7 @@ public:
                     rclcpp::sleep_for(std::chrono::milliseconds(50));
                     last_state = current_state_;
 
-                    walking_phase_ = (walking_phase_ + 1) % num_phases; // Loop through the walking phases
+                    walking_phase_ = (walking_phase_ + 1) % NUM_PHASES; // Loop through the walking phases
 
                     // After completing a full cycle through the legs, move to the next leg in the sequence:
                     if (walking_phase_ == 3) {
@@ -692,7 +695,7 @@ public:
 
         // Walking Sequence State and leg map:
         std::array<std::array<int64_t, 3>, NUM_LEGS> legs_;
-        std::array<std::array<int64_t, 3>, NUM_PHASES> pose_sequence_;
+        std::array<std::array<double, 3>, NUM_PHASES> pose_sequence_;
         int walking_phase_ = 0;
         int active_leg_ = 0;
 };
