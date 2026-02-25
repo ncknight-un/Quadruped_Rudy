@@ -305,7 +305,7 @@ public:
                     for (size_t j = 0; j < motor_ids.size(); ++j) {
                         // If it is a right leg flip the knee joint angle:
                         if(leg == BR || leg == FR) {
-                            if (j == 0) { // Knee joint is the first joint in the list for each leg
+                            if (j == 0 || j == 2) { // Knee joint and abad joint is flipped for right legs in the walking sequence
                                 pose[j] = -pose[j];
                             }
                         }
@@ -496,7 +496,7 @@ public:
             // Compute final target and wrap it into [0, max_encoder_value_]
             int32_t final_target = (current_ticks + delta + max_encoder_value_ + 1) % (max_encoder_value_ + 1);
 
-            RCLCPP_INFO_STREAM(this->get_logger(), "Commanding Motor ID: " << motor_id
+            RCLCPP_DEBUG_STREAM(this->get_logger(), "Commanding Motor ID: " << motor_id
                 << " | Target Angle (rad): " << target_angle_rad
                 << " | Current Ticks: " << current_ticks
                 << " | Target Position (ticks): " << final_target);
