@@ -258,7 +258,6 @@ public:
                             command_motor_position(motor_ids_[i], target_joints[i]);
                             rclcpp::sleep_for(std::chrono::milliseconds(5)); // Small delay to avoid overloading the bus.
                         }
-                        rclcpp::sleep_for(std::chrono::milliseconds(100)); // Small delay after commanding new state before next timer callback.
                     }
 
                     // Define motor ids for each leg
@@ -271,32 +270,32 @@ public:
 
                     int joints_per_leg = 3;
                     int num_phases = walking_pose_sequence_.size() / joints_per_leg;
+                    if (num_phases == 0) return;
 
-                    for (int phase = 0; phase < num_phases; ++phase) {
-                        // Extract one phase pose safely
-                        std::vector<double> pose(
-                            walking_pose_sequence_.begin() + phase * joints_per_leg,
-                            walking_pose_sequence_.begin() + (phase + 1) * joints_per_leg
-                        );
+                    // Extract pose for current phase
+                    std::vector<double> pose(
+                        walking_pose_sequence_.begin() + walking_phase_ * joints_per_leg,
+                        walking_pose_sequence_.begin() + (walking_phase_ + 1) * joints_per_leg
+                    );
 
-                        // Send pose to each leg
-                        for (size_t leg = 0; leg < legs.size(); ++leg) {
-                            const auto& motor_ids = legs[leg];
+                    // Send pose to each leg
+                    for (size_t leg = 0; leg < legs.size(); ++leg) {
+                        const auto& motor_ids = legs[leg];
 
-                            if (pose.size() != motor_ids.size()) {
-                                RCLCPP_ERROR_STREAM(this->get_logger(), "Pose size does not match motor count for leg " << leg);
-                                continue;
-                            }
-
-                            for (size_t j = 0; j < motor_ids.size(); ++j) {
-                                command_motor_position(motor_ids[j], pose[j]);
-                            }
+                        if (pose.size() != motor_ids.size()) {
+                            RCLCPP_ERROR_STREAM(this->get_logger(), "Pose size does not match motor count for leg " << leg);
+                            continue;
                         }
 
-                        rclcpp::sleep_for(std::chrono::milliseconds(50));
+                        for (size_t j = 0; j < motor_ids.size(); ++j) {
+                            command_motor_position(motor_ids[j], pose[j]);
+                        }
                     }
 
+                    rclcpp::sleep_for(std::chrono::milliseconds(50));
                     last_state = current_state_;
+
+                    walking_phase_ = (walking_phase_ + 1) % num_phases; // Loop through the walking phases
                 }
             }
         };
@@ -667,6 +666,9 @@ public:
 
         // Track Last Motor Ticks for Smooth Commanding:
         std::unordered_map<int, int32_t> last_motor_ticks_;
+
+        // Walking Sequence State:
+        int walking_phase_ = 0;
 };
 
 int main(int argc, char * argv[])
