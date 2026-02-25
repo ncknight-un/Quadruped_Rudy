@@ -8,19 +8,9 @@
 #include <cmath>
 #include <vector>
 #include "rudylib/angle.hpp"
+#include "Eigen/Dense"
 
-namespace rudylib
-{
-    /// \brief A struct to hold the 3D position of the foot of a single leg in the quadruped robot, Rudy.
-    //
-    // x, y, z in meters
-    struct Point3D {
-        double x = 0.0;
-        double y = 0.0;
-        double z = 0.0;
-    };
-
-
+namespace rudylib {
     /// \brief A struct to hold the joint angles of a single leg in the quadruped robot, Rudy.
     //
     // Abduction/Adduction, Hip, Knee in radians
@@ -49,17 +39,17 @@ namespace rudylib
             /// \param coxa, femur, tibia (double) The lengths of the leg segments
             /// \param legtype (char) The type of leg ('L' or 'R
             /// \return bool True if the target is within the leg's domain, False otherwise
-            bool is_within_domain(Point3D target);
+            bool is_within_domain(const Eigen::Vector3d& target);
             
             /// \brief Update the foot position given joint angles
             /// \param angles (JointAngles) The joint angles of the leg
             /// \return Point3D The updated foot position in 3D space
-            Point3D update_FK(JointAngles angles);
+            Eigen::Vector3d update_FK(JointAngles angles) const;
 
             /// \brief Calculate the joint angles required to reach a target foot position
             /// \param target (Point3D) The desired foot position in 3D space
             /// \return JointAngles The joint angles required to reach the target position
-            JointAngles calc_IK(Point3D target);
+            JointAngles calc_IK(Eigen::Vector3d target) const;
 
         private:
             double coxa_, femur_, tibia_ = 0.0; // Link lengths in meters

@@ -9,7 +9,7 @@
        1.25, 0.785, 0.0,
       -1.25, 0.785, 0.0,
       # Head joints: looking forward
-      0.0, -0.25]
+      0.25, 0.0]
 
     lying_pose:  
       # Input in order of leg diagram: FL, BL, BR, FR, Head
@@ -18,7 +18,7 @@
       -0.2,-1.45, 0.0, 
       0.2,-1.45, 0.0,
       # Head joints: looking forward
-      0.0, -0.2]
+      0.2, 0.0]
 
     paw_pose:  
       # Input in order of leg diagram: FL, BL, BR, FR, Head
@@ -29,7 +29,7 @@
        1.5, 0.785, 0.1,
       -1.25, -0.785, -0.1,
       # Head joints: looking forward
-      0.0, -0.25]
+      0.25, 0.0]
 
     sitting_pose:  
       # Input in order of leg diagram: FL, BL, BR, FR, Head
@@ -38,7 +38,7 @@
       0.785,0.0, 0.0, 
       -0.785,0.0, 0.0,
       # Head joints: looking forward
-      0.0, 0.1]
+      -0.1, 0.0]
 
     kneeling_pose:  
       # Input in order of leg diagram: FL, BL, BR, FR, Head
@@ -47,4 +47,4 @@
       -0.2,-1.45, 0.0, 
       0.2,-1.45, 0.0,
       # Head joints: looking forward
-      0.0, -1.0]
+      1.0, 0.0]

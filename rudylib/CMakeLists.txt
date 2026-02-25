@@ -19,6 +19,7 @@ find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 # name creates a cmake "target" (in this case the target is called "libname"
 add_library(rudylib
     src/LegKinematics.cpp
+    src/RudyKinematics.cpp
 )
 
 # Use target_include_directories so that #include"mylibrary/header.hpp" works
@@ -30,7 +31,9 @@ add_library(rudylib
 target_include_directories(rudylib
     PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
-    $<INSTALL_INTERFACE:include/>)
+    $<INSTALL_INTERFACE:include/>
+    ${EIGEN3_INCLUDE_DIRS}
+)
 
 # specify additional compilation flags for the library
 # Public causes the flags to propagate to anything
@@ -45,7 +48,6 @@ target_compile_features(rudylib PUBLIC cxx_std_23)
 
 # Create an executable from the following source code files
 # The Name of the executable creates a cmake "target"
-# add_executable(foot_position src/foot_position.cpp)       // Create executables to test kinematics
 
 # Use target_link_libraries to add dependencies to a "target"
 # (e.g., a library or executable)
@@ -54,7 +56,7 @@ target_compile_features(rudylib PUBLIC cxx_std_23)
 # and paths to the locations of header files.
 # Because libname has PUBLIC cxx_std_23 as a compile feature
 # Name will also be compiled with c++23 as the standard.
-# target_link_libraries(foot_position PRIVATE rudylib Eigen3::Eigen)        //#####
+#target_link_libraries(foot_position PRIVATE rudylib Eigen3::Eigen)
 
 # install the include files by copying the whole include directory
 install(DIRECTORY include/rudylib DESTINATION include)
@@ -109,6 +111,10 @@ if(BUILD_TESTING)
     add_executable(test_foot tests/leg_kinematics_test.cpp)
     target_link_libraries(test_foot Catch2::Catch2WithMain rudylib Eigen3::Eigen)
 
+    add_executable(test_body tests/body_kinematics_test.cpp)
+    target_link_libraries(test_body Catch2::Catch2WithMain rudylib Eigen3::Eigen)
+
     # register the test with CTest, telling it what executable to run
     add_test(NAME TestFoot COMMAND test_foot)
+    add_test(NAME TestBody COMMAND test_body)
 endif()
