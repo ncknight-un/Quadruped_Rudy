@@ -63,6 +63,13 @@ enum class RobotState {
     WAITING
 };
 
+enum Leg {
+    BL = 0,
+    BR = 1,
+    FL = 2,
+    FR = 3,
+};
+
 class StaticPositionNode : public rclcpp::Node {
 public:
     StaticPositionNode() : Node("static_position_node")
@@ -100,6 +107,12 @@ public:
             rclcpp::sleep_for(std::chrono::milliseconds(50));
             setupDynamixel(static_cast<uint8_t>(motor_id));
         }
+
+        // Initialize the leg map:
+        legs_[BL] = {motor_ids_[0],  motor_ids_[1],  motor_ids_[2]};
+        legs_[BR] = {motor_ids_[3],  motor_ids_[4],  motor_ids_[5]};
+        legs_[FL] = {motor_ids_[6],  motor_ids_[7],  motor_ids_[8]};
+        legs_[FR] = {motor_ids_[9],  motor_ids_[10], motor_ids_[11]};
 
         // Initialize the Services:
         // Stand Service:
@@ -260,14 +273,6 @@ public:
                         }
                     }
 
-                    // Define motor ids for each leg
-                    std::vector<std::vector<int64_t>> legs = {
-                        {motor_ids_[0],  motor_ids_[1],  motor_ids_[2]},   // BL
-                        {motor_ids_[3],  motor_ids_[4],  motor_ids_[5]},   // BR
-                        {motor_ids_[6],  motor_ids_[7],  motor_ids_[8]},   // FL
-                        {motor_ids_[9],  motor_ids_[10], motor_ids_[11]}   // FR
-                    };
-
                     int joints_per_leg = 3;
                     int num_phases = walking_pose_sequence_.size() / joints_per_leg;
                     if (num_phases == 0) return;
@@ -279,15 +284,22 @@ public:
                     );
 
                     // Send pose to each leg
-                    for (size_t leg = 0; leg < legs.size(); ++leg) {
-                        const auto& motor_ids = legs[leg];
+                    for (size_t leg = 0; leg < legs_.size(); ++leg) {
+                        const auto& motor_ids = legs_[leg];
 
                         if (pose.size() != motor_ids.size()) {
                             RCLCPP_ERROR_STREAM(this->get_logger(), "Pose size does not match motor count for leg " << leg);
                             continue;
                         }
-
+                        
+                        // Command each motor to move:
                         for (size_t j = 0; j < motor_ids.size(); ++j) {
+                            // If it is a right leg flip the knee joint angle:
+                            if(leg == BR || leg == FR) {
+                                if (j == 0) { // Knee joint is the first joint in the list for each leg
+                                    pose[j] = -pose[j];
+                                }
+                            }
                             command_motor_position(motor_ids[j], pose[j]);
                         }
                     }
@@ -667,7 +679,8 @@ public:
         // Track Last Motor Ticks for Smooth Commanding:
         std::unordered_map<int, int32_t> last_motor_ticks_;
 
-        // Walking Sequence State:
+        // Walking Sequence State and leg map:
+        std::array<std::array<int64_t, 3>, NUM_LEGS> legs_;
         int walking_phase_ = 0;
 };
 
