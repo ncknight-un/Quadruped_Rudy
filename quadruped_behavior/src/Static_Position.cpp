@@ -295,7 +295,7 @@ public:
                     );
 
                     // Send pose to each leg
-                    auto leg = active_leg_ = 0;
+                    auto leg = active_leg_;
                     const auto& motor_ids = legs_[leg];
 
                     if (pose.size() != motor_ids.size()) {
@@ -319,7 +319,7 @@ public:
                     walking_phase_ = (walking_phase_ + 1) % NUM_PHASES; // Loop through the walking phases
 
                     // After completing a full cycle through the legs, move to the next leg in the sequence:
-                    if (walking_phase_ == 3) {
+                    if (walking_phase_ == 0) {
                         active_leg_ = (active_leg_ + 1) % NUM_LEGS;
                     }
                 }
