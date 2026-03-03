@@ -4,10 +4,10 @@
       # Input in order of leg diagram: BL, BR, FL, FR,  Head
       # Knee, Hip, Abad joints for each leg, then head joints
       # back legs first
-      [1.25, 0.785, 0.05,
-      -1.25, 0.785, 0.05,
-       1.25, 0.785, 0.05,
-      -1.25, 0.785, 0.05,
+      [1.25, 0.785, 0.0,
+      -1.25, 0.785, 0.0,
+       1.25, 0.785, 0.0,
+      -1.25, 0.785, 0.0,
       # Head joints: looking forward
       0.25, 0.0]
 
@@ -51,12 +51,12 @@
     
     walking_pose_sequence:  
       # STANCE
-      [1.6, 0.785, 0.05,
+      [1.35, 0.785, 0.0,
       # LIFT
-      1.8, 0.3, -0.05,
+      1.6, 0.785, 0.0,
       # SWING
-      1.8, 0.0, -0.05,
-      # ABDUCTION (Widen stance / stabilize the leg)
-      1.6, 0.5, 0.15,
+      1.6, 0.5, 0.0,
+      # ABDUCTION (Widen stance / stabilize)
+      1.6, 0.5, 0.3,
       # LAND
-      1.6, 0.785, 0.05]
+      1.35, 0.5, 0.0]
