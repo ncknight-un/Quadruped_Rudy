@@ -17,6 +17,7 @@
 ///     ~ kneel (std_srvs::srv::Empty): Commands the robot to kneel in a default static position.
 ///     ~ lie_down (std_srvs::srv::Empty): Commands the robot to lie down in a default static position.
 ///     ~ give_paw (std_srvs::srv::Empty): Commans the robot to give a paw in a default static position.
+///     ~ walk (std_srvs::srv::Empty): Commands the robot to walk in a default walking sequence.
 /// CLIENTS:
 ///     ~ None
 
