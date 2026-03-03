@@ -280,7 +280,7 @@ public:
                 }
                 else if(current_state_ == RobotState::WALKING) {
                     // If the state is walking, loop through the walking pose sequence:
-                    RCLCPP_INFO_STREAM(this->get_logger(), "New State: WALKING");
+                    RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "New State: WALKING");
 
                     // Initialize the walk sequence at static standing: 
                     if(current_state_ != last_state) {
