@@ -81,7 +81,8 @@ enum WalkingPhase {
     PHASE_SWING = 2,
     PHASE_THUST = 3,
     PHASE_LAND = 4,
-    NUM_PHASES = 5
+    PHASE_RESET = 5,
+    NUM_PHASES = 6
 };
 
 class StaticPositionNode : public rclcpp::Node {
