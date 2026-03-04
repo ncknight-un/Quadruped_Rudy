@@ -46,6 +46,7 @@
 #define ADDR_PRESENT_POSITION 132
 #define ADDR_PROFILE_ACCELERATION 108
 #define ADDR_PROFILE_VELOCITY     112
+#define ADDR_HARDWARE_ERROR_STATUS 70
 #define LEN_GOAL_POSITION 4
 
 // Protocol version
@@ -193,7 +194,7 @@ public:
 
             // Read Raw Encode Ticks from Motors:
             std::vector<int32_t> calibrated_ticks = ReadAllMotorPosition();
-            
+
             // Create map of current Motor Position by ID for easy access:
             std::map<int32_t, int32_t> current_motor_ticks;
             for (size_t i = 0; i < motor_ids_.size(); ++i) {
@@ -323,7 +324,7 @@ public:
                                 pose[j] = -pose[j];
                             }
                         }
-                        command_motor_position(motor_ids[j], pose[j]);
+                        // command_motor_position(motor_ids[j], pose[j]);
                     }
 
                     rclcpp::sleep_for(std::chrono::milliseconds(50));
@@ -618,7 +619,7 @@ public:
             for (const auto& motor_id: motor_ids_) {
                 uint8_t dxl_error = 0;
                 // Disable torque
-                auto dxl_comm_result = packetHandler->write1ByteTxRx(
+                packetHandler->write1ByteTxRx(
                     portHandler,
                     static_cast<uint8_t>(motor_id),
                     ADDR_TORQUE_ENABLE,
