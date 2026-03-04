@@ -28,3 +28,4 @@ https://moribots.github.io/
 
 Code: 
 [Angle Normalization Function] https://chatgpt.com/share/6997d1b9-a3b0-8010-a676-0088e03eb22c
+[Dynamixel Group Write] https://chatgpt.com/share/69a7a8f4-ab80-8010-920f-b4226203b85d

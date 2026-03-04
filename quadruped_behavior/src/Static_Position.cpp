@@ -31,6 +31,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rcutils/cmdline_parser.h"
 #include "dynamixel_sdk/dynamixel_sdk.h"
+#include "dynamixel_sdk/group_sync_write.h"
 #include "std_srvs/srv/empty.hpp"
 #include "std_msgs/msg/u_int64.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
@@ -45,6 +46,7 @@
 #define ADDR_PRESENT_POSITION 132
 #define ADDR_PROFILE_ACCELERATION 108
 #define ADDR_PROFILE_VELOCITY     112
+#define LEN_GOAL_POSITION 4
 
 // Protocol version
 #define PROTOCOL_VERSION 2.0  // Default Protocol version of DYNAMIXEL X series.
@@ -101,6 +103,9 @@ public:
         // Init Dynamixel Connection:
         portHandler = dynamixel::PortHandler::getPortHandler(DEVICE_NAME);
         packetHandler = dynamixel::PacketHandler::getPacketHandler(PROTOCOL_VERSION);
+
+        // Create GroupSyncWrite instance for goal position:
+        groupSyncWrite_ = std::make_unique<dynamixel::GroupSyncWrite>(portHandler, packetHandler, ADDR_GOAL_POSITION, LEN_GOAL_POSITION);
 
         // Open Port and Enable Torque:
         if (!portHandler->openPort()) {
@@ -175,8 +180,7 @@ public:
         timestep_publisher_ = this->create_publisher<std_msgs::msg::UInt64>("~/timestep", 10);
         
         auto timer_callback = [this]() -> void {
-
-            // Print Once:
+            // Print Timer rate at start of simmulation:
             RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "The Timer rate is " << rate_ << " Hz!");
 
             // Publish the timestep:
@@ -186,6 +190,11 @@ public:
 
             // Read Raw Encode Ticks from Motors:
             std::vector<int32_t> calibrated_ticks = ReadAllMotorPosition();
+            // Create map of current Motor Position by ID for easy access:
+            std::map<int32_t, int32_t> current_motor_ticks;
+            for (size_t i = 0; i < motor_ids_.size(); ++i) {
+                current_motor_ticks[motor_ids_[i]] = calibrated_ticks[i];
+            }
 
             // If this is first loop, set the last_motor_ticks_ to the current position to avoid large jumps on first command:
             if (last_motor_ticks_.empty()) {
@@ -268,12 +277,49 @@ public:
                                                         (current_state_ == RobotState::GIVE_PAW ? "GIVE_PAW" :
                                                         (current_state_ == RobotState::LYING ? "LYING" : "WAITING"))))));
 
-                    // Command the robot to the static pose:
-                    for (size_t i = 0; i < motor_ids_.size(); ++i) {
-                        RCLCPP_DEBUG_STREAM(this->get_logger(), "Target Motor ID: " << motor_ids_[i] << " | Target Angle (rad): " << target_joints[i]);
-                        command_motor_position(motor_ids_[i], target_joints[i]);
-                        rclcpp::sleep_for(std::chrono::milliseconds(5)); // Small delay to avoid overloading the bus.
+                    // // Command the robot to the static pose:
+                    // for (size_t i = 0; i < motor_ids_.size(); ++i) {
+                    //     RCLCPP_DEBUG_STREAM(this->get_logger(), "Target Motor ID: " << motor_ids_[i] << " | Target Angle (rad): " << target_joints[i]);
+                    //     command_motor_position(motor_ids_[i], target_joints[i]);
+                    //     rclcpp::sleep_for(std::chrono::milliseconds(5)); // Small delay to avoid overloading the bus.
+                    // }
+
+                    // Command the robot with GroupSyncWrite for the static poses:
+
+                    // Make sure parameters are reset for each call:
+                    // ################################## Begin_Citation [Group_Write] #########################
+                    groupSyncWrite_->clearParam();
+                
+                    for(size_t i = 0; i < motor_ids_.size(); i++) {
+                        uint8_t param_goal_position[4];
+
+                        int32_t position_ticks = radians_to_ticks(target_joints[i]);
+
+                        // Update the position ticks to the final_taget:
+                        int32_t final_target_ticks = calibrate_offset(motor_ids_[i], target_joints[i], current_motor_ticks[motor_ids_[i]]);
+
+                        // Convert int32 to 4 byte array:
+                        param_goal_position[0] = DXL_LOBYTE(DXL_LOWORD(final_target_ticks));
+                        param_goal_position[1] = DXL_HIBYTE(DXL_LOWORD(final_target_ticks));
+                        param_goal_position[2] = DXL_LOBYTE(DXL_HIWORD(final_target_ticks));
+                        param_goal_position[3] = DXL_HIBYTE(DXL_HIWORD(final_target_ticks));
+
+                        // groupSyncWrite addparam:
+                        if (!groupSyncWrite_->addParam(static_cast<uint8_t>(motor_ids_[i]), param_goal_position)) {
+                            RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to add param for motor " << motor_ids_[i]);
+                            return;
+                        }
                     }
+
+                    // Command all motors with one packet:
+                    int result = groupSyncWrite_->txPacket();
+
+                    if (result != COMM_SUCCESS) {
+                        RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to send GroupSyncWrite packet: " << packetHandler->getTxRxResult(result));
+                    }
+                    // ################################## End_Citation [Group_Write] #########################  
+
+
                     last_state = current_state_;
 
                     rclcpp::sleep_for(std::chrono::milliseconds(100)); // Small delay after commanding new state before next timer callback.
@@ -520,6 +566,29 @@ public:
             }
         }
 
+        // Calibrate offset:
+        int32_t calibrate_offset(int motor_id, double target_angle_rad, int32_t current_ticks) {
+            // Convert target angle to encoder ticks
+            int32_t target_ticks = radians_to_ticks(normalize_angle_0_2pi(target_angle_rad));
+
+            // Apply calibration offset
+            target_ticks += motor_offset_map_[motor_id];
+
+            // Compute delta in circular encoder space
+            int32_t delta = static_cast<int32_t>(target_ticks) - static_cast<int32_t>(current_ticks);
+            int32_t half_range = (max_encoder_value_ + 1) / 2;
+
+            // Wrap delta to [-half_range, +half_range]
+            if (delta > half_range) delta -= (max_encoder_value_ + 1);
+            if (delta < -half_range) delta += (max_encoder_value_ + 1);
+
+            // Compute final target and wrap it into [0, max_encoder_value_]
+            int32_t final_target = (current_ticks + delta + max_encoder_value_ + 1) % (max_encoder_value_ + 1);
+
+            // Return the final tick target to add to the packet:
+            return final_target;
+        }
+
         // Service Handlers:
         void handle_service_stand(const std::shared_ptr<std_srvs::srv::Empty::Request> request,
             std::shared_ptr<std_srvs::srv::Empty::Response> response)
@@ -672,6 +741,9 @@ public:
 
         // Initialize Motor Offset Map:
         std::unordered_map<int, int> motor_offset_map_;
+
+        // Group Sync Write Pointer for Dynamixel SDK:
+        std::unique_ptr<dynamixel::GroupSyncWrite> groupSyncWrite_;
 
         // Get the target joint angles for each pose:
         std::vector<double> standing_pose_ = this->declare_parameter<std::vector<double>>("standing_pose", std::vector<double>{});
