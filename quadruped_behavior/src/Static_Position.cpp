@@ -340,7 +340,7 @@ public:
 
                     // After completing a full cycle through the legs, move to the next leg in the sequence:
                     if (walking_phase_ == 0) {
-                        active_legset_ = (active_legset_ + 1) % NUM_LEGS/2;
+                        active_legset_ = (active_legset_ + 1) % (NUM_LEGS/2); // Loop between the two leg sets (FL/BR and BL/FR)
                     }
                 }
             }
@@ -547,11 +547,12 @@ public:
                 //Flip Knee and abad joints:
                 pose[0] = -pose[0]; // Knee
                 pose[2] = -pose[2]; // Abad
-
-                walk_joint_state_.push_back(pose[0]);
-                walk_joint_state_.push_back(pose[1]);
-                walk_joint_state_.push_back(pose[2]);
             }
+            // Add the leg to the joint state list for the current phase:
+            walk_joint_state_.push_back(pose[0]);
+            walk_joint_state_.push_back(pose[1]);
+            walk_joint_state_.push_back(pose[2]);
+
             return; // Successfully added the legs joints proper orientation
         }
 
