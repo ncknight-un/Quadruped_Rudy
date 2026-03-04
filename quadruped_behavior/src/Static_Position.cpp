@@ -79,7 +79,7 @@ enum WalkingPhase {
     PHASE_STANCE = 0,
     PHASE_LIFT = 1,
     PHASE_SWING = 2,
-    PHASE_THRUST = 3,
+    PHASE_THUST = 3,
     PHASE_LAND = 4,
     NUM_PHASES = 5
 };
@@ -305,25 +305,14 @@ public:
                     // Build a packet where the opposite sided legs swing, with the other two stable (When one side is in swing phase, make other two push back.)
                     // NOTE: My goal is to have this done through a series of target joints being send to handle_pose_call()
                     // Alternate the gait sequence between FL/BR and BL/FR:
+                    int stance_phase = (walking_phase_ + NUM_PHASES / 2) % NUM_PHASES;
                     if(active_legset_ == 0) { // FL/BR
                         // Set the FL and BR to the walking phase, and BL and FR to static stance pose, head will be set straight forward for now:
                         walk_joint_state_.clear();
                         process_pose(pose_sequence_[walking_phase_], 0); // FL
-                        if(walking_phase_ == PHASE_THRUST) {
-                            // During the thrust phase, static legs will pushback at the hips.
-                            process_pose(pose_sequence_[3], 1);              // BL
-                        }
-                        else {
-                            process_pose(pose_sequence_[0], 1);              // BL
-                        }
+                        process_pose(pose_sequence_[stance_phase], 1);              // BL
                         process_pose(pose_sequence_[walking_phase_], 2); // BR
-                        if(walking_phase_ == PHASE_THRUST) {
-                            // During the thrust phase, static legs will pushback at the hips.
-                            process_pose(pose_sequence_[3], 3);              // FR
-                        }
-                        else {
-                            process_pose(pose_sequence_[0], 3);              // FR
-                        }
+                        process_pose(pose_sequence_[stance_phase], 3);              // FR
 
                         walk_joint_state_.push_back(0.0);
                         walk_joint_state_.push_back(0.0);
@@ -331,21 +320,9 @@ public:
                     else { // FR/BL
                         // Set the FL and BR to the walking phase, and BL and FR to static stance pose, head will be set straight forward for now:
                         walk_joint_state_.clear();
-                        if(walking_phase_ == PHASE_THRUST) {
-                            // During the thrust phase, static legs will pushback at the hips.
-                            process_pose(pose_sequence_[3], 0);              // FL
-                        }
-                        else {
-                            process_pose(pose_sequence_[0], 0);              // FL
-                        }
+                        process_pose(pose_sequence_[stance_phase], 0);                     // FL
                         process_pose(pose_sequence_[walking_phase_], 1);        // BL
-                        if(walking_phase_ == PHASE_THRUST) {
-                            // During the thrust phase, static legs will pushback at the hips.
-                            process_pose(pose_sequence_[3], 2);              // BR
-                        }
-                        else {
-                            process_pose(pose_sequence_[0], 2);              // BR
-                        }
+                        process_pose(pose_sequence_[stance_phase], 2);                     // BR
                         process_pose(pose_sequence_[walking_phase_], 3);        // FR
 
                         walk_joint_state_.push_back(0.0);
