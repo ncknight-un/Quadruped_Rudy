@@ -1,56 +1,64 @@
 /**:
   ros__parameters:
-    standing_pose:  
+    standing_pose:
       # Input in order of leg diagram: BL, BR, FL, FR,  Head
       # Knee, Hip, Abad joints for each leg, then head joints
       # back legs first
+<<<<<<< HEAD
       [1.25, 0.785, 0.0,
       -1.25, 0.785, 0.0,
        1.25, 0.785, 0.0,
       -1.25, 0.785, 0.0,
+=======
+      [1.785, 0.9, 0.15,
+      -1.785, 0.9, -0.15,
+       1.785, 0.9, 0.15,
+      -1.785, 0.9, -0.15,
+>>>>>>> 8cb2f3a (Updated Joint states and acceleratiosn)
       # Head joints: looking forward
-      0.25, 0.0]
+      0.1, 0.0]
 
-    lying_pose:  
+    lying_pose:
       # Input in order of leg diagram: FL, BL, BR, FR, Head
-      [0.35,-1.0, 0.0, 
+      [0.35,-1.0, 0.0,
       -0.35,-1.0, 0.0,
-      -0.2,-1.45, 0.0, 
+      -0.2,-1.45, 0.0,
       0.2,-1.45, 0.0,
       # Head joints: looking forward
       0.2, 0.0]
 
-    paw_pose:  
+    paw_pose:
       # Input in order of leg diagram: FL, BL, BR, FR, Head
       # Knee, Hip, Abad joints for each leg, then head joints
       # back legs first
-      [2.0, 0.785, 0.1,
-      -2.0, 0.785, -0.1,
-       1.5, 0.785, 0.1,
-      -1.25, -0.785, -0.1,
+      [1.785, 0.675, 0.15,
+      -1.785, 0.675, -0.15,
+       1.5, 0.785, 0.15,
+      -1.25, -0.785, -0.15,
       # Head joints: looking forward
-      0.25, 0.0]
+     -0.25, 0.0]
 
-    sitting_pose:  
+    sitting_pose:
       # Input in order of leg diagram: FL, BL, BR, FR, Head
-      [0.9,-0.5, 0.0, 
+      [0.9,-0.5, 0.0,
       -0.9,-0.5, 0.0,
-      0.785,0.0, 0.0, 
+      0.785,0.0, 0.0,
       -0.785,0.0, 0.0,
       # Head joints: looking forward
       -0.1, 0.0]
 
-    kneeling_pose:  
+    kneeling_pose:
       # Input in order of leg diagram: FL, BL, BR, FR, Head
-      [0.785,0.0, 0.0, 
-      -0.785,0.0, 0.0,
-      -0.2,-1.45, 0.0, 
-      0.2,-1.45, 0.0,
-      # Head joints: looking forward
-      1.0, 0.0]
-    
-    walking_pose_sequence:  
+      [1.785, 0.9, 0.15,
+      -1.785, 0.9, 0.15,
+      -0.2, -1.45, 0.0,
+      0.2, -1.45, 0.0,
+      # Head joints: looking forward 
+      -1.0, 0.0]
+
+    walking_pose_sequence:
       # STANCE
+<<<<<<< HEAD
       [1.35, 0.785, 0.0,
       # LIFT
       1.6, 0.785, 0.0,
@@ -60,3 +68,14 @@
       1.6, 0.5, 0.3,
       # LAND
       1.35, 0.5, 0.0]
+=======
+      [1.785, 0.9, 0.05,
+      # LIFT
+      1.825, 0.9, 0.05,
+      # SWING
+      1.785, 0.3, 0.15,
+      # ABDUCTION
+      1.785, 0.3, 0.15,
+      # LAND
+      1.6, 0.8, 0.05]
+>>>>>>> 8cb2f3a (Updated Joint states and acceleratiosn)
