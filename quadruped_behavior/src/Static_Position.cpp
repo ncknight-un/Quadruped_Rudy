@@ -309,9 +309,9 @@ public:
                         // Set the FL and BR to the walking phase, and BL and FR to static stance pose, head will be set straight forward for now:
                         walk_joint_state_.clear();
                         process_pose(pose_sequence_[walking_phase_], 0); // FL
-                        process_pose(pose_sequence_[0], 1);              // BL
+                        process_pose(pose_sequence_[3], 1);              // BL
                         process_pose(pose_sequence_[walking_phase_], 2); // BR
-                        process_pose(pose_sequence_[0], 3);              // FR
+                        process_pose(pose_sequence_[3], 3);              // FR
 
                         walk_joint_state_.push_back(0.0);
                         walk_joint_state_.push_back(0.0);
@@ -319,9 +319,9 @@ public:
                     else { // FR/BL
                         // Set the FL and BR to the walking phase, and BL and FR to static stance pose, head will be set straight forward for now:
                         walk_joint_state_.clear();
-                        process_pose(pose_sequence_[0], 0);                     // FL
+                        process_pose(pose_sequence_[3], 0);                     // FL
                         process_pose(pose_sequence_[walking_phase_], 1);        // BL
-                        process_pose(pose_sequence_[0], 2);                     // BR
+                        process_pose(pose_sequence_[3], 2);                     // BR
                         process_pose(pose_sequence_[walking_phase_], 3);        // FR
 
                         walk_joint_state_.push_back(0.0);
