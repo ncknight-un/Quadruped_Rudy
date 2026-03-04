@@ -304,7 +304,7 @@ public:
                     // NOTE: My goal is to have this done through a series of target joints being send to handle_pose_call()
                     // Alternate the gait sequence between FL/BR and BL/FR:
                     int stance_phase = (walking_phase_ + NUM_PHASES / 2) % NUM_PHASES;
-                    if(active_legset_ == 0) { // FL/BR
+                    // if(active_legset_ == 0) { // FL/BR
                         // Set the FL and BR to the walking phase, and BL and FR to static stance pose, head will be set straight forward for now:
                         walk_joint_state_.clear();
                         process_pose(pose_sequence_[walking_phase_], 0); // FL
@@ -314,22 +314,22 @@ public:
 
                         walk_joint_state_.push_back(0.0);
                         walk_joint_state_.push_back(0.0);
-                    }
-                    else { // FR/BL
-                        // Set the FL and BR to the walking phase, and BL and FR to static stance pose, head will be set straight forward for now:
-                        walk_joint_state_.clear();
-                        process_pose(pose_sequence_[stance_phase], 0);                     // FL
-                        process_pose(pose_sequence_[walking_phase_], 1);        // BL
-                        process_pose(pose_sequence_[stance_phase], 2);                     // BR
-                        process_pose(pose_sequence_[walking_phase_], 3);        // FR
+                    // }
+                    // else { // FR/BL
+                    //     // Set the FL and BR to the walking phase, and BL and FR to static stance pose, head will be set straight forward for now:
+                    //     walk_joint_state_.clear();
+                    //     process_pose(pose_sequence_[stance_phase], 0);                     // FL
+                    //     process_pose(pose_sequence_[walking_phase_], 1);        // BL
+                    //     process_pose(pose_sequence_[stance_phase], 2);                     // BR
+                    //     process_pose(pose_sequence_[walking_phase_], 3);        // FR
 
-                        walk_joint_state_.push_back(0.0);
-                        walk_joint_state_.push_back(0.0);
-                    }
+                    //     walk_joint_state_.push_back(0.0);
+                    //     walk_joint_state_.push_back(0.0);
+                    // }
 
-                    if (walk_joint_state_.size() != motor_ids_.size()) {
-                        RCLCPP_ERROR_STREAM(this->get_logger(), "Walking Joint State Set incorrectly");
-                    }
+                    // if (walk_joint_state_.size() != motor_ids_.size()) {
+                    //     RCLCPP_ERROR_STREAM(this->get_logger(), "Walking Joint State Set incorrectly");
+                    // }
                     
                     // Build and send the packet for that phase:
                     handle_pose_call(walk_joint_state_, current_motor_ticks);
@@ -338,9 +338,9 @@ public:
                     walking_phase_ = (walking_phase_ + 1) % NUM_PHASES; // Loop through the walking phases
 
                     // After completing a full cycle through the legs, move to the next leg in the sequence:
-                    if (walking_phase_ == 0) {
-                        active_legset_ = (active_legset_ + 1) % (NUM_LEGS/2); // Loop between the two leg sets (FL/BR and BL/FR)
-                    }
+                    // if (walking_phase_ == 0) {
+                    //     active_legset_ = (active_legset_ + 1) % (NUM_LEGS/2); // Loop between the two leg sets (FL/BR and BL/FR)
+                    // }
                 }
             }
         };
