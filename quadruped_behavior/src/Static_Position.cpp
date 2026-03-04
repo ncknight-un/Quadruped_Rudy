@@ -308,28 +308,22 @@ public:
                     if(active_legset_ == 0) { // FL/BR
                         // Set the FL and BR to the walking phase, and BL and FR to static stance pose, head will be set straight forward for now:
                         walk_joint_state_.clear();
-                        auto &p1 = pose_sequence_[walking_phase_];
-                        auto &p2 = pose_sequence_[0];
-                        // Insert the joint state for each leg
-                        walk_joint_state_.insert(walk_joint_state_.end(), p1.begin(), p1.end());
-                        walk_joint_state_.insert(walk_joint_state_.end(), p2.begin(), p2.end());
-                        walk_joint_state_.insert(walk_joint_state_.end(), p1.begin(), p1.end());
-                        walk_joint_state_.insert(walk_joint_state_.end(), p2.begin(), p2.end());
-                        // Insert the joint state for the head (static for now):
+                        process_pose(pose_sequence_[walking_phase_], 0); // FL
+                        process_pose(pose_sequence_[0], 1);              // BL
+                        process_pose(pose_sequence_[walking_phase_], 2); // BR
+                        process_pose(pose_sequence_[0], 3);              // FR
+
                         walk_joint_state_.push_back(0.0);
                         walk_joint_state_.push_back(0.0);
                     }
                     else { // FR/BL
                         // Set the FL and BR to the walking phase, and BL and FR to static stance pose, head will be set straight forward for now:
                         walk_joint_state_.clear();
-                        auto &p1 = pose_sequence_[0];
-                        auto &p2 = pose_sequence_[walking_phase_];
-                        // Insert the joint state for each leg
-                        walk_joint_state_.insert(walk_joint_state_.end(), p1.begin(), p1.end());
-                        walk_joint_state_.insert(walk_joint_state_.end(), p2.begin(), p2.end());
-                        walk_joint_state_.insert(walk_joint_state_.end(), p1.begin(), p1.end());
-                        walk_joint_state_.insert(walk_joint_state_.end(), p2.begin(), p2.end());
-                        // Insert the joint state for the head (static for now):
+                        process_pose(pose_sequence_[0], 0);                     // FL
+                        process_pose(pose_sequence_[walking_phase_], 1);        // BL
+                        process_pose(pose_sequence_[0], 2);                     // BR
+                        process_pose(pose_sequence_[walking_phase_], 3);        // FR
+
                         walk_joint_state_.push_back(0.0);
                         walk_joint_state_.push_back(0.0);
                     }
@@ -544,6 +538,21 @@ public:
             }
             // ################################## End_Citation [Group_Write] #########################  
             return;
+        }
+
+        void process_pose(std::vector<double> pose, int leg_index) {
+            bool flip = (leg_index == BR || leg_index == FR); // Flip knee and abad joints for Right legs
+
+            if(flip) {
+                //Flip Knee and abad joints:
+                pose[0] = -pose[0]; // Knee
+                pose[2] = -pose[2]; // Abad
+
+                walk_joint_state_.push_back(pose[0]);
+                walk_joint_state_.push_back(pose[1]);
+                walk_joint_state_.push_back(pose[2]);
+            }
+            return; // Successfully added the legs joints proper orientation
         }
 
         // Service Handlers:
