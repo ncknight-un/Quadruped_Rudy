@@ -141,6 +141,7 @@ public:
         pose_sequence_[2] = {walking_pose_sequence_[6], walking_pose_sequence_[7], walking_pose_sequence_[8]};
         pose_sequence_[3] = {walking_pose_sequence_[9], walking_pose_sequence_[10], walking_pose_sequence_[11]};
         pose_sequence_[4] = {walking_pose_sequence_[12], walking_pose_sequence_[13], walking_pose_sequence_[14]};
+        pose_sequence_[5] = {walking_pose_sequence_[15], walking_pose_sequence_[16], walking_pose_sequence_[17]};
 
         // Initialize the Services:
         // Stand Service:
