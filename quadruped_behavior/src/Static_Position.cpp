@@ -540,7 +540,7 @@ public:
             return;
         }
 
-        void process_pose(std::vector<double> pose, int leg_index) {
+        void process_pose(std::array<double,3> pose, int leg_index) {
             bool flip = (leg_index == BR || leg_index == FR); // Flip knee and abad joints for Right legs
 
             if(flip) {
