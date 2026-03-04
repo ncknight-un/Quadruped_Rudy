@@ -335,7 +335,7 @@ public:
                     
                     // Build and send the packet for that phase:
                     handle_pose_call(walk_joint_state_, current_motor_ticks);
-                    rclcpp::sleep_for(std::chrono::milliseconds(2));    // Very small deley between phase packets
+                    rclcpp::sleep_for(std::chrono::milliseconds(150));    // Very small deley between phase packets
 
                     walking_phase_ = (walking_phase_ + 1) % NUM_PHASES; // Loop through the walking phases
 
