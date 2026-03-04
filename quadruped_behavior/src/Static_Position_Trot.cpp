@@ -159,7 +159,7 @@ public:
             std::bind(&StaticPositionNode::handle_service_lie_down, this, std::placeholders::_1, std::placeholders::_2)
         );
         // Lie Down Service:
-        walk_service_ = this->create_service<std_srvs::srv::Empty>(
+        lie_down_service_ = this->create_service<std_srvs::srv::Empty>(
             "walk",
             std::bind(&StaticPositionNode::handle_service_walk, this, std::placeholders::_1, std::placeholders::_2)
         );
@@ -280,7 +280,7 @@ public:
                 }
                 else if(current_state_ == RobotState::WALKING) {
                     if (current_state_ != last_state) {
-                        RCLCPP_INFO_STREAM(this->get_logger(), "Entering WALKING state, initializing walk sequence...");
+                        RCLCPP_INFO_STREAM(this->get_logger(), "Entering WALKING state, initializing walk sequence for trot...");
                     };
 
                     // Initialize the walk sequence at static standing: 
@@ -288,41 +288,20 @@ public:
                         for (size_t i = 0; i < motor_ids_.size(); ++i) {
                             RCLCPP_DEBUG_STREAM(this->get_logger(), "Target Motor ID: " << motor_ids_[i] << " | Target Angle (rad): " << target_joints[i]);
                             command_motor_position(motor_ids_[i], target_joints[i]);
-                            rclcpp::sleep_for(std::chrono::milliseconds(5)); // Small delay to avoid overloading the bus.
+                            rclcpp::sleep_for(std::chrono::milliseconds(50)); // Small delay to let COM stabilize.
                         }
                     }
 
-                    // Set the current pose to the current walking phase pose:
+                    // Cycle through the walk sequence with the FL and BR legs in sync and the FR and BL legs in sync:
+                    // Note: When one set moves forward, when that set is in swing phase, the other leg set will push back on the hip to propel forward.
+                    // Set the current pose to the current walking phase pose for the swing set:
                     std::array<double, 3> pose = pose_sequence_[walking_phase_];
 
-                    // Send pose to each leg
+                    // Active Leg set:
+                                        // Send pose to each leg
                     auto leg = active_leg_;
                     const auto& motor_ids = legs_[leg];
 
-                    if (pose.size() != motor_ids.size()) {
-                        RCLCPP_ERROR_STREAM(this->get_logger(), "Pose size does not match motor count for leg " << leg);
-                    }
-                    
-                    // Command each motor to move:
-                    for (size_t j = 0; j < motor_ids.size(); ++j) {
-                        // If it is a right leg flip the knee joint angle:
-                        if(leg == BR || leg == FR) {
-                            if (j == 0 || j == 2) { // Knee joint and abad joint is flipped for right legs in the walking sequence
-                                pose[j] = -pose[j];
-                            }
-                        }
-                        command_motor_position(motor_ids[j], pose[j]);
-                    }
-
-                    rclcpp::sleep_for(std::chrono::milliseconds(50));
-                    last_state = current_state_;
-
-                    walking_phase_ = (walking_phase_ + 1) % NUM_PHASES; // Loop through the walking phases
-
-                    // After completing a full cycle through the legs, move to the next leg in the sequence:
-                    if (walking_phase_ == 0) {
-                        active_leg_ = (active_leg_ + 1) % NUM_LEGS;
-                    }
                 }
             }
         };
