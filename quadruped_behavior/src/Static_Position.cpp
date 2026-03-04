@@ -128,10 +128,10 @@ public:
             setupDynamixel(static_cast<uint8_t>(motor_id));
         }
 
-        // Initialize the leg map:
-        legs_[BL] = {motor_ids_[0],  motor_ids_[1],  motor_ids_[2]};
-        legs_[BR] = {motor_ids_[3],  motor_ids_[4],  motor_ids_[5]};
-        legs_[FL] = {motor_ids_[6],  motor_ids_[7],  motor_ids_[8]};
+        // Initialize the leg map (FL, BL, BR, FR):
+        legs_[FL] = {motor_ids_[0],  motor_ids_[1],  motor_ids_[2]};
+        legs_[BL] = {motor_ids_[3],  motor_ids_[4],  motor_ids_[5]};
+        legs_[BR] = {motor_ids_[6],  motor_ids_[7],  motor_ids_[8]};
         legs_[FR] = {motor_ids_[9],  motor_ids_[10], motor_ids_[11]};
 
         // Initialize the walking pose sequence:
@@ -299,42 +299,54 @@ public:
                         // Start the walk service by recentering COM at Stance:
                         handle_pose_call(target_joints, current_motor_ticks);
                         rclcpp::sleep_for(std::chrono::milliseconds(50)); // Wait for system to stabilize
+                        last_state = current_state_;    
                     }
 
                     // Build a packet where the opposite sided legs swing, with the other two stable (When one side is in swing phase, make other two push back.)
                     // NOTE: My goal is to have this done through a series of target joints being send to handle_pose_call()
-                    
+                    // Alternate the gait sequence between FL/BR and BL/FR:
+                    if(active_legset_ == 0) { // FL/BR
+                        // Set the FL and BR to the walking phase, and BL and FR to static stance pose, head will be set straight forward for now:
+                        walk_joint_state_.clear();
+                        auto &p1 = pose_sequence_[walking_phase_];
+                        auto &p2 = pose_sequence_[0];
+                        // Insert the joint state for each leg
+                        walk_joint_state_.insert(walk_joint_state_.end(), p1.begin(), p1.end());
+                        walk_joint_state_.insert(walk_joint_state_.end(), p2.begin(), p2.end());
+                        walk_joint_state_.insert(walk_joint_state_.end(), p1.begin(), p1.end());
+                        walk_joint_state_.insert(walk_joint_state_.end(), p2.begin(), p2.end());
+                        // Insert the joint state for the head (static for now):
+                        walk_joint_state_.push_back(0.0);
+                        walk_joint_state_.push_back(0.0);
+                    }
+                    else { // FR/BL
+                        // Set the FL and BR to the walking phase, and BL and FR to static stance pose, head will be set straight forward for now:
+                        walk_joint_state_.clear();
+                        auto &p1 = pose_sequence_[0];
+                        auto &p2 = pose_sequence_[walking_phase_];
+                        // Insert the joint state for each leg
+                        walk_joint_state_.insert(walk_joint_state_.end(), p1.begin(), p1.end());
+                        walk_joint_state_.insert(walk_joint_state_.end(), p2.begin(), p2.end());
+                        walk_joint_state_.insert(walk_joint_state_.end(), p1.begin(), p1.end());
+                        walk_joint_state_.insert(walk_joint_state_.end(), p2.begin(), p2.end());
+                        // Insert the joint state for the head (static for now):
+                        walk_joint_state_.push_back(0.0);
+                        walk_joint_state_.push_back(0.0);
+                    }
 
-                    // Set the current pose to the current walking phase pose:
-                    std::array<double, 3> pose = pose_sequence_[walking_phase_];
-
-                    // Send pose to each leg
-                    auto leg = active_leg_;
-                    const auto& motor_ids = legs_[leg];
-
-                    if (pose.size() != motor_ids.size()) {
-                        RCLCPP_ERROR_STREAM(this->get_logger(), "Pose size does not match motor count for leg " << leg);
+                    if (walk_joint_state_.size() != motor_ids_.size()) {
+                        RCLCPP_ERROR_STREAM(this->get_logger(), "Walking Joint State Set incorrectly");
                     }
                     
-                    // Command each motor to move:
-                    for (size_t j = 0; j < motor_ids.size(); ++j) {
-                        // If it is a right leg flip the knee joint angle:
-                        if(leg == BR || leg == FR) {
-                            if (j == 0 || j == 2) { // Knee joint and abad joint is flipped for right legs in the walking sequence
-                                pose[j] = -pose[j];
-                            }
-                        }
-                        // command_motor_position(motor_ids[j], pose[j]);
-                    }
-
-                    rclcpp::sleep_for(std::chrono::milliseconds(50));
-                    last_state = current_state_;
+                    // Build and send the packet for that phase:
+                    handle_pose_call(walk_joint_state_, current_motor_ticks);
+                    rclcpp::sleep_for(std::chrono::milliseconds(2));    // Very small deley between phase packets
 
                     walking_phase_ = (walking_phase_ + 1) % NUM_PHASES; // Loop through the walking phases
 
                     // After completing a full cycle through the legs, move to the next leg in the sequence:
                     if (walking_phase_ == 0) {
-                        active_leg_ = (active_leg_ + 1) % NUM_LEGS;
+                        active_legset_ = (active_legset_ + 1) % NUM_LEGS/2;
                     }
                 }
             }
@@ -617,6 +629,7 @@ public:
             RCLCPP_INFO(get_logger(), "Received reset torque command, disabling torque on all motors...");
             // Disable torque on all motors one at a time:
             for (const auto& motor_id: motor_ids_) {
+                // NOTE: This will not work for overloaded motors. Most errors I have experienced require a full battery reboot.
                 uint8_t dxl_error = 0;
                 // Disable torque
                 packetHandler->write1ByteTxRx(
@@ -629,21 +642,11 @@ public:
                 rclcpp::sleep_for(std::chrono::milliseconds(5)); 
 
                 // Reset Error Status:
-                uint8_t error_status = 0;
-                auto result = packetHandler->read1ByteTxRx(
+                packetHandler->write1ByteTxRx(
                     portHandler,
                     motor_id,
-                    ADDR_HARDWARE_ERROR_STATUS,
-                    &error_status,
-                    &dxl_error
+                    ADDR_HARDWARE_ERROR_STATUS, 0, &dxl_error
                 );
-
-                RCLCPP_INFO_STREAM(get_logger(),
-                    "Motor " << motor_id
-                    << " hardware error status: "
-                    << static_cast<int>(error_status)
-                    << " comm result: "
-                    << result);
                 rclcpp::sleep_for(std::chrono::milliseconds(5));
 
                 // Re-enable torque:
@@ -727,9 +730,10 @@ public:
 
         // Walking Sequence State and leg map:
         std::array<std::array<int64_t, 3>, NUM_LEGS> legs_;
-        std::array<std::array<double, 3>, NUM_PHASES> pose_sequence_;
+        std::array<std::array<double, 3>, NUM_PHASES> pose_sequence_; 
+        std::vector<double> walk_joint_state_;
         int walking_phase_ = 0;
-        int active_leg_ = 0;
+        int active_legset_ = 0; // Note: (0) - FL/BR and (1) - BL/FR
 };
 
 int main(int argc, char * argv[])
