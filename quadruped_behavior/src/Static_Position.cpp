@@ -307,7 +307,7 @@ public:
                     // Build a packet where the opposite sided legs swing, with the other two stable (When one side is in swing phase, make other two push back.)
                     // NOTE: My goal is to have this done through a series of target joints being send to handle_pose_call()
                     // Alternate the gait sequence between FL/BR and BL/FR:
-                    int stance_phase = (walking_phase_ + NUM_PHASES / 2) % NUM_PHASES;
+                    int stance_phase = 0;  //(walking_phase_ + NUM_PHASES / 2) % NUM_PHASES;
                     if(active_legset_ == 0) { // FL/BR
                         // Set the FL and BR to the walking phase, and BL and FR to static stance pose, head will be set straight forward for now:
                         walk_joint_state_.clear();
