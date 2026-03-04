@@ -55,6 +55,6 @@
       # LIFT UP
       1.875, 0.9, 0.05,
       # THRUST - push back hard
-      1.65, 0.6, 0.05,
+      1.65, 0.55, 0.05,
       # LAND and Swing Forwards
-      1.65, 0.7, 0.05]
+      1.65, 0.85, 0.05]
