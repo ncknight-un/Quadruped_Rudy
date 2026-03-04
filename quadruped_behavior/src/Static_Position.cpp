@@ -107,6 +107,9 @@ public:
         // Create GroupSyncWrite instance for goal position:
         groupSyncWrite_ = std::make_unique<dynamixel::GroupSyncWrite>(portHandler, packetHandler, ADDR_GOAL_POSITION, LEN_GOAL_POSITION);
 
+        // Build Joint State Publisher Map (Once at startup to map joints to names in JSP)
+        // TODO
+
         // Open Port and Enable Torque:
         if (!portHandler->openPort()) {
             RCLCPP_FATAL(get_logger(), "Failed to open port %s", DEVICE_NAME);
@@ -190,6 +193,7 @@ public:
 
             // Read Raw Encode Ticks from Motors:
             std::vector<int32_t> calibrated_ticks = ReadAllMotorPosition();
+            
             // Create map of current Motor Position by ID for easy access:
             std::map<int32_t, int32_t> current_motor_ticks;
             for (size_t i = 0; i < motor_ids_.size(); ++i) {
@@ -240,7 +244,7 @@ public:
                     target_joints = paw_pose_;
                     break;
                 case RobotState::WALKING:
-                    // Set the target_joints to standing (to set all other joints, then in loop adjust one leg at a time)
+                    // Set the target_joints to standing (then start walking gait)
                     target_joints = standing_pose_;
                     break;
                 case RobotState::WAITING:
@@ -277,50 +281,12 @@ public:
                                                         (current_state_ == RobotState::GIVE_PAW ? "GIVE_PAW" :
                                                         (current_state_ == RobotState::LYING ? "LYING" : "WAITING"))))));
 
-                    // // Command the robot to the static pose:
-                    // for (size_t i = 0; i < motor_ids_.size(); ++i) {
-                    //     RCLCPP_DEBUG_STREAM(this->get_logger(), "Target Motor ID: " << motor_ids_[i] << " | Target Angle (rad): " << target_joints[i]);
-                    //     command_motor_position(motor_ids_[i], target_joints[i]);
-                    //     rclcpp::sleep_for(std::chrono::milliseconds(5)); // Small delay to avoid overloading the bus.
-                    // }
-
-                    // Command the robot with GroupSyncWrite for the static poses:
-
-                    // Make sure parameters are reset for each call:
-                    // ################################## Begin_Citation [Group_Write] #########################
-                    groupSyncWrite_->clearParam();
-                
-                    for(size_t i = 0; i < motor_ids_.size(); i++) {
-                        uint8_t param_goal_position[4];
-
-                        // Update the position ticks to the final_taget:
-                        int32_t final_target_ticks = calibrate_offset(motor_ids_[i], target_joints[i], current_motor_ticks[motor_ids_[i]]);
-
-                        // Convert int32 to 4 byte array:
-                        param_goal_position[0] = DXL_LOBYTE(DXL_LOWORD(final_target_ticks));
-                        param_goal_position[1] = DXL_HIBYTE(DXL_LOWORD(final_target_ticks));
-                        param_goal_position[2] = DXL_LOBYTE(DXL_HIWORD(final_target_ticks));
-                        param_goal_position[3] = DXL_HIBYTE(DXL_HIWORD(final_target_ticks));
-
-                        // groupSyncWrite addparam:
-                        if (!groupSyncWrite_->addParam(static_cast<uint8_t>(motor_ids_[i]), param_goal_position)) {
-                            RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to add param for motor " << motor_ids_[i]);
-                            return;
-                        }
-                    }
-
-                    // Command all motors with one packet:
-                    int result = groupSyncWrite_->txPacket();
-
-                    if (result != COMM_SUCCESS) {
-                        RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to send GroupSyncWrite packet: " << packetHandler->getTxRxResult(result));
-                    }
-                    // ################################## End_Citation [Group_Write] #########################  
-
-
+                    // Call static pose handling:
+                    handle_pose_call(target_joints, current_motor_ticks);
+                    // Set new last state to current:
                     last_state = current_state_;
 
-                    rclcpp::sleep_for(std::chrono::milliseconds(100)); // Small delay after commanding new state before next timer callback.
+                    rclcpp::sleep_for(std::chrono::milliseconds(100)); // Small delay after commanding new state before next timer callback incase a repetive call is sent.
                 }
                 else if(current_state_ == RobotState::WALKING) {
                     if (current_state_ != last_state) {
@@ -329,12 +295,14 @@ public:
 
                     // Initialize the walk sequence at static standing: 
                     if(current_state_ != last_state) {
-                        for (size_t i = 0; i < motor_ids_.size(); ++i) {
-                            RCLCPP_DEBUG_STREAM(this->get_logger(), "Target Motor ID: " << motor_ids_[i] << " | Target Angle (rad): " << target_joints[i]);
-                            command_motor_position(motor_ids_[i], target_joints[i]);
-                            rclcpp::sleep_for(std::chrono::milliseconds(5)); // Small delay to avoid overloading the bus.
-                        }
+                        // Start the walk service by recentering COM at Stance:
+                        handle_pose_call(target_joints, current_motor_ticks);
+                        rclcpp::sleep_for(std::chrono::milliseconds(50)); // Wait for system to stabilize
                     }
+
+                    // Build a packet where the opposite sided legs swing, with the other two stable (When one side is in swing phase, make other two push back.)
+                    // NOTE: My goal is to have this done through a series of target joints being send to handle_pose_call()
+                    
 
                     // Set the current pose to the current walking phase pose:
                     std::array<double, 3> pose = pose_sequence_[walking_phase_];
@@ -508,62 +476,6 @@ public:
             return positions;
         }
 
-        // Motor Command Function:
-        void command_motor_position(int motor_id, double target_angle_rad) {
-            // Convert target angle to encoder ticks
-            int32_t target_ticks = radians_to_ticks(normalize_angle_0_2pi(target_angle_rad));
-
-            // Apply calibration offset
-            target_ticks += motor_offset_map_[motor_id];
-
-            // Read current motor position
-            uint32_t current_ticks = 0;
-            uint8_t dxl_error = 0;
-            auto dxl_comm_result = packetHandler->read4ByteTxRx(
-                portHandler,
-                static_cast<uint8_t>(motor_id),
-                ADDR_PRESENT_POSITION,
-                &current_ticks,
-                &dxl_error
-            );
-            if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
-                RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to read current position for motor " << motor_id);
-                current_ticks = last_motor_ticks_[motor_id]; // Use last known position on read error
-            }
-
-            // Compute delta in circular encoder space
-            int32_t delta = static_cast<int32_t>(target_ticks) - static_cast<int32_t>(current_ticks);
-            int32_t half_range = (max_encoder_value_ + 1) / 2;
-
-            // Wrap delta to [-half_range, +half_range]
-            if (delta > half_range) delta -= (max_encoder_value_ + 1);
-            if (delta < -half_range) delta += (max_encoder_value_ + 1);
-
-            // Compute final target and wrap it into [0, max_encoder_value_]
-            int32_t final_target = (current_ticks + delta + max_encoder_value_ + 1) % (max_encoder_value_ + 1);
-
-            RCLCPP_DEBUG_STREAM(this->get_logger(), "Commanding Motor ID: " << motor_id
-                << " | Target Angle (rad): " << target_angle_rad
-                << " | Current Ticks: " << current_ticks
-                << " | Target Position (ticks): " << final_target);
-
-            // Send the final target to motor
-            dxl_comm_result = packetHandler->write4ByteTxRx(
-                portHandler,
-                static_cast<uint8_t>(motor_id),
-                ADDR_GOAL_POSITION,
-                static_cast<uint32_t>(final_target),
-                &dxl_error
-            );
-
-            if (dxl_comm_result != COMM_SUCCESS) {
-                RCLCPP_ERROR_STREAM(this->get_logger(), "TX/RX Error: " << packetHandler->getTxRxResult(dxl_comm_result));
-            }
-            if (dxl_error != 0) {
-                RCLCPP_ERROR_STREAM(this->get_logger(), "Motor error: " << packetHandler->getRxPacketError(dxl_error));
-            }
-        }
-
         // Calibrate offset:
         int32_t calibrate_offset(int motor_id, double target_angle_rad, int32_t current_ticks) {
             // Convert target angle to encoder ticks
@@ -585,6 +497,40 @@ public:
 
             // Return the final tick target to add to the packet:
             return final_target;
+        }
+
+        void handle_pose_call(std::vector<double> target_joints, std::map<int32_t, int32_t> current_motor_ticks) {
+            // Make sure parameters are reset for each call:
+            // ################################## Begin_Citation [Group_Write] #########################
+            groupSyncWrite_->clearParam();
+        
+            for(size_t i = 0; i < motor_ids_.size(); i++) {
+                uint8_t param_goal_position[4];
+
+                // Update the position ticks to the final_taget:
+                int32_t final_target_ticks = calibrate_offset(motor_ids_[i], target_joints[i], current_motor_ticks[motor_ids_[i]]);
+
+                // Convert int32 to 4 byte array:
+                param_goal_position[0] = DXL_LOBYTE(DXL_LOWORD(final_target_ticks));
+                param_goal_position[1] = DXL_HIBYTE(DXL_LOWORD(final_target_ticks));
+                param_goal_position[2] = DXL_LOBYTE(DXL_HIWORD(final_target_ticks));
+                param_goal_position[3] = DXL_HIBYTE(DXL_HIWORD(final_target_ticks));
+
+                // groupSyncWrite addparam:
+                if (!groupSyncWrite_->addParam(static_cast<uint8_t>(motor_ids_[i]), param_goal_position)) {
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to add param for motor " << motor_ids_[i]);
+                    return;
+                }
+            }
+
+            // Command all motors with one packet:
+            int result = groupSyncWrite_->txPacket();
+
+            if (result != COMM_SUCCESS) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to send GroupSyncWrite packet: " << packetHandler->getTxRxResult(result));
+            }
+            // ################################## End_Citation [Group_Write] #########################  
+            return;
         }
 
         // Service Handlers:
@@ -609,7 +555,7 @@ public:
 
             RCLCPP_INFO(get_logger(), "Received sit command, moving to static position...");
 
-            // Set the State:9
+            // Set the State:
             current_state_ = RobotState::SITTING;
         }
         void handle_service_kneel(const std::shared_ptr<std_srvs::srv::Empty::Request> request,
@@ -668,9 +614,10 @@ public:
             (void)response;
 
             RCLCPP_INFO(get_logger(), "Received reset torque command, disabling torque on all motors...");
-            // Disable torque on all motors:
+            // Disable torque on all motors one at a time:
             for (const auto& motor_id: motor_ids_) {
                 uint8_t dxl_error = 0;
+                // Disable torque
                 auto dxl_comm_result = packetHandler->write1ByteTxRx(
                     portHandler,
                     static_cast<uint8_t>(motor_id),
@@ -678,16 +625,17 @@ public:
                     0,
                     &dxl_error
                 );
-                if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
-                    RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to disable torque for motor " << motor_id);
-                } else {
-                    RCLCPP_INFO_STREAM(this->get_logger(), "Torque disabled for motor " << motor_id);
-                }
-                rclcpp::sleep_for(std::chrono::milliseconds(50)); // Small delay between motor commands
-            }
-            // Turn Torque back on after reset and set state to WAITING:
-            for (const auto& motor_id: motor_ids_) {
-                uint8_t dxl_error = 0;
+                rclcpp::sleep_for(std::chrono::milliseconds(5)); 
+
+                // Reset Error Status:
+                packetHandler->write1ByteTxRx(
+                    portHandler,
+                    motor_id,
+                    ADDR_HARDWARE_ERROR_STATUS, 0, &dxl_error
+                );
+                rclcpp::sleep_for(std::chrono::milliseconds(5));
+
+                // Re-enable torque:
                 auto dxl_comm_result = packetHandler->write1ByteTxRx(
                     portHandler,
                     static_cast<uint8_t>(motor_id),
@@ -695,12 +643,14 @@ public:
                     1,
                     &dxl_error
                 );
+                rclcpp::sleep_for(std::chrono::milliseconds(5));
+
+                // Verify that all operations were successful:
                 if (dxl_comm_result != COMM_SUCCESS || dxl_error != 0) {
-                    RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to enable torque for motor " << motor_id);
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to remove hardware error and re-enable torque for motor_id: " << motor_id);
                 } else {
-                    RCLCPP_INFO_STREAM(this->get_logger(), "Torque enabled for motor " << motor_id);
+                    RCLCPP_INFO_STREAM(this->get_logger(), "Hardware error cleared and torque re-enabled for motor_id: " << motor_id);
                 }
-                rclcpp::sleep_for(std::chrono::milliseconds(50)); // Small delay between motor commands
             }
             current_state_ = RobotState::WAITING;
         }  

@@ -1,21 +1,21 @@
 /**:
   ros__parameters:
     standing_pose:
-      # Input in order of leg diagram: BL, BR, FL, FR,  Head
+      # Input in order of leg diagram: FL, BL, BR, FR,  Head
       # Knee, Hip, Abad joints for each leg, then head joints
       # back legs first
       [1.785, 0.9, 0.15,
+      1.785, 0.9, 0.15,
       -1.785, 0.9, -0.15,
-       1.785, 0.9, 0.15,
       -1.785, 0.9, -0.15,
       # Head joints: looking forward
       0.1, 0.0]
 
     lying_pose:
       # Input in order of leg diagram: FL, BL, BR, FR, Head
-      [0.35,-1.0, 0.0,
+      [-0.2,-1.45, 0.0,
+      0.35,-1.0, 0.0,
       -0.35,-1.0, 0.0,
-      -0.2,-1.45, 0.0,
       0.2,-1.45, 0.0,
       # Head joints: looking forward
       0.2, 0.0]
@@ -24,27 +24,27 @@
       # Input in order of leg diagram: FL, BL, BR, FR, Head
       # Knee, Hip, Abad joints for each leg, then head joints
       # back legs first
-      [1.785, 0.675, 0.15,
+      [1.5, 0.785, 0.15,
+      1.785, 0.675, 0.15,
       -1.785, 0.675, -0.15,
-       1.5, 0.785, 0.15,
       -1.25, -0.785, -0.15,
       # Head joints: looking forward
      -0.25, 0.0]
 
     sitting_pose:
       # Input in order of leg diagram: FL, BL, BR, FR, Head
-      [0.9,-0.5, 0.0,
-      -0.9,-0.5, 0.0,
-      0.785,0.0, 0.0,
+      [0.785,0.0, 0.0,
+      0.9,-0.25, 0.0,
+      -0.9,-0.25, 0.0,
       -0.785,0.0, 0.0,
       # Head joints: looking forward
       -0.1, 0.0]
 
     kneeling_pose:
       # Input in order of leg diagram: FL, BL, BR, FR, Head
-      [1.785, 0.9, 0.15,
+      [-0.2, -1.45, 0.0,
+      1.785, 0.9, 0.15,
       -1.785, 0.9, 0.15,
-      -0.2, -1.45, 0.0,
       0.2, -1.45, 0.0,
       # Head joints: looking forward 
       -1.0, 0.0]
