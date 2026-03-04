@@ -293,8 +293,6 @@ public:
                     for(size_t i = 0; i < motor_ids_.size(); i++) {
                         uint8_t param_goal_position[4];
 
-                        int32_t position_ticks = radians_to_ticks(target_joints[i]);
-
                         // Update the position ticks to the final_taget:
                         int32_t final_target_ticks = calibrate_offset(motor_ids_[i], target_joints[i], current_motor_ticks[motor_ids_[i]]);
 
