@@ -79,7 +79,7 @@ enum WalkingPhase {
     PHASE_STANCE = 0,
     PHASE_LIFT = 1,
     PHASE_SWING = 2,
-    PHASE_THUST = 3,
+    PHASE_THRUST = 3,
     PHASE_LAND = 4,
     NUM_PHASES = 5
 };
