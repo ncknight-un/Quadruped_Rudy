@@ -706,7 +706,7 @@ public:
         int profile_acceleration_ = this->declare_parameter<int>("profile_acceleration", 30);
 
         // Set the timer frequency:
-        double rate_ = this->declare_parameter<double>("frequency", 20.0);
+        double rate_ = this->declare_parameter<double>("frequency", 4.0);
         // Initialize a timestep counter for the timer:
         uint64_t timestep_ = 0;
 
