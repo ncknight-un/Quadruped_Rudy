@@ -629,11 +629,21 @@ public:
                 rclcpp::sleep_for(std::chrono::milliseconds(5)); 
 
                 // Reset Error Status:
-                packetHandler->write1ByteTxRx(
+                uint8_t error_status = 0;
+                auto result = packetHandler->read1ByteTxRx(
                     portHandler,
                     motor_id,
-                    ADDR_HARDWARE_ERROR_STATUS, 0, &dxl_error
+                    ADDR_HARDWARE_ERROR_STATUS,
+                    &error_status,
+                    &dxl_error
                 );
+
+                RCLCPP_INFO_STREAM(get_logger(),
+                    "Motor " << motor_id
+                    << " hardware error status: "
+                    << static_cast<int>(error_status)
+                    << " comm result: "
+                    << result);
                 rclcpp::sleep_for(std::chrono::milliseconds(5));
 
                 // Re-enable torque:
