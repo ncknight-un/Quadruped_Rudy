@@ -24,6 +24,7 @@ https://docs.ros.org/en/humble/How-To-Guides/Installing-on-Raspberry-Pi.html
 https://chatgpt.com/share/6979a62e-57e4-8010-adfe-f711d6bd331b
 
 Gait Control Methods: 
+https://www.animatornotebook.com/learn/quadrupeds-gaits
 https://moribots.github.io/
 
 Code: 

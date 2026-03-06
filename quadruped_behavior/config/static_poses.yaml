@@ -4,10 +4,10 @@
       # Input in order of leg diagram: FL, BL, BR, FR,  Head
       # Knee, Hip, Abad joints for each leg, then head joints
       # back legs first
-      [1.65, 1.0, 0.05,
-       1.65, 1.0, 0.05,
-      -1.65, 1.0, -0.05, 
-      -1.65, 1.0, -0.05,
+      [1.5, 0.9, 0.05,
+       1.5, 0.9, 0.05,
+      -1.5, 0.9, -0.05, 
+      -1.5, 0.9, -0.05,
       # Head joints: looking forward
       0.1, 0.0]
 
@@ -43,8 +43,8 @@
     kneeling_pose:
       # Input in order of leg diagram: FL, BL, BR, FR, Head
       [-0.2, -1.45, 0.0,
-      1.65, 0.9, 0.15,
-      -1.65, 0.9, 0.15,
+      1.5, 0.9, 0.15,
+      -1.5, 0.9, 0.15,
       0.2, -1.45, 0.0,
       # Head joints: looking forward 
       -1.0, 0.0]
@@ -53,7 +53,7 @@
       # STANCE
       [1.5, 0.9, 0.0,
       # LIFT UP
-      1.65, 0.9, 0.0,
+      1.75, 0.9, 0.0,
       # THRUST - push back hard
       1.5, 0.55, 0.0,
       # LAND and Swing Forwards
