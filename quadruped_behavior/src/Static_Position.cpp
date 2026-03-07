@@ -520,12 +520,12 @@ public:
         void process_pose(std::array<double,3> pose, int leg_index) {
             bool flip = (leg_index == BR || leg_index == FR); // Flip knee and abad joints for Right legs
 
-            bool front = (leg_inde == FL || leg_index == FR); // Bend the knee more on the front legs to bring COM forward.
+            bool front = (leg_index == FL || leg_index == FR); // Bend the knee more on the front legs to bring COM forward.
 
             if(front) {
                 // Increase pose and knee and hip slightly
-                pose[0] = pose[0] + 0.05
-                pose[1] = pose[0] + 0.05
+                pose[0] += 0.05
+                pose[1] += 0.05
             }
 
             if(flip) {
