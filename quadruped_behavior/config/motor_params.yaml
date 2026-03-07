@@ -6,4 +6,4 @@
     max_encoder_value: 4095
     profile_velocity: 1100
     profile_acceleration: 600
-    frequency: 8.0
+    frequency: 12.0
