@@ -524,8 +524,8 @@ public:
 
             if(front) {
                 // Increase pose and knee and hip slightly
-                pose[0] += 0.05
-                pose[1] += 0.05
+                pose[0] += 0.05;
+                pose[1] += 0.05;
             }
 
             if(flip) {
