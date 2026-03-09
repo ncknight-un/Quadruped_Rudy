@@ -83,9 +83,7 @@ enum WalkingPhase {
     PHASE_SWING = 1,
     PHASE_THUST = 2,
     PHASE_LAND = 3,
-    PHASE_5,
-    PHASE_6,
-    NUM_PHASES = 6
+    NUM_PHASES = 4
 };
 
 class StaticPositionNode : public rclcpp::Node {
@@ -143,8 +141,6 @@ public:
         pose_sequence_[1] = {walking_pose_sequence_[3], walking_pose_sequence_[4], walking_pose_sequence_[5]};
         pose_sequence_[2] = {walking_pose_sequence_[6], walking_pose_sequence_[7], walking_pose_sequence_[8]};
         pose_sequence_[3] = {walking_pose_sequence_[9], walking_pose_sequence_[10], walking_pose_sequence_[11]};
-        pose_sequence_[4] = {walking_pose_sequence_[12], walking_pose_sequence_[13], walking_pose_sequence_[14]};
-        pose_sequence_[5] = {walking_pose_sequence_[15], walking_pose_sequence_[16], walking_pose_sequence_[17]};
 
         // Initialize the Services:
         // Stand Service:
