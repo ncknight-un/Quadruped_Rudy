@@ -4,6 +4,6 @@
     motor_calib_offsets: [2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048]
     encode_ticks_per_rad: 652
     max_encoder_value: 4095
-    profile_velocity: 1800
-    profile_acceleration: 900
+    profile_velocity: 1200
+    profile_acceleration: 600
     frequency: 20.0
