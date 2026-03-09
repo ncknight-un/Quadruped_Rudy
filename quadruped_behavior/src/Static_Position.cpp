@@ -523,7 +523,7 @@ public:
             bool front = (leg_index == FL || leg_index == FR); // Bend the knee more on the front legs to bring COM forward.
 
             if(front) {
-                // Increase pose and knee and hip slightly
+                // Increase pose and knee and hip slightly to bring front mass forward.
                 pose[0] += 0.05;
                 pose[1] += 0.05;
             }
