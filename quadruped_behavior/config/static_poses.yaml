@@ -9,7 +9,7 @@
       -1.65, 1.0, -0.05, 
       -1.65, 1.0, -0.05,
       # Head joints: looking forward
-      0.1, 0.0]
+      -0.35, 0.0]
 
     lying_pose:
       # Input in order of leg diagram: FL, BL, BR, FR, Head
