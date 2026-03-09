@@ -48,6 +48,9 @@
 #define ADDR_PROFILE_VELOCITY     112
 #define ADDR_HARDWARE_ERROR_STATUS 70
 #define LEN_GOAL_POSITION 4
+#define ADDR_POSITION_P_GAIN  84
+#define ADDR_POSITION_I_GAIN  82
+#define ADDR_POSITION_D_GAIN  80
 
 // Protocol version
 #define PROTOCOL_VERSION 2.0  // Default Protocol version of DYNAMIXEL X series.
@@ -408,6 +411,15 @@ public:
                     "Failed to enable torque for motor " << int(dxl_id));
                 return;
             }
+
+            // Set PID to Increase Torque in motors: 
+            // Increase position P gain for more holding torque
+            packetHandler->write2ByteTxRx(
+                portHandler, dxl_id, ADDR_POSITION_P_GAIN, 1200, &dxl_error);  // default is 800
+            packetHandler->write2ByteTxRx(
+                portHandler, dxl_id, ADDR_POSITION_I_GAIN, 0, &dxl_error);
+            packetHandler->write2ByteTxRx(
+                portHandler, dxl_id, ADDR_POSITION_D_GAIN, 0, &dxl_error);
 
             // Set motion profiles (non-critical → don't fail hard)
             packetHandler->write4ByteTxRx(
