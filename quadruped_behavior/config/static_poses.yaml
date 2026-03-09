@@ -50,13 +50,17 @@
       -1.15, 0.0]
 
     walking_pose_sequence:
-      # STANCE
+      # STANCE - loaded
       [1.5, 0.9, 0.05,
-      # LIFT UP
-      1.90, 1.15, 0.05,
-      # THRUST - push back
+      # LIFT START
+      1.65, 0.95, 0.05,
+      # LIFT PEAK
+      1.85, 1.05, 0.05,
+      # THRUST START
+      1.6, 0.75, -0.05,
+      # THRUST END
       1.5, 0.55, -0.05,
-      # LAND and Swing Forwards
+      # LAND
       1.5, 0.85, 0.05]
 
     walking_backwards_pose_sequence:
