@@ -415,7 +415,7 @@ public:
             // Set PID to Increase Torque in motors: 
             // Increase position P gain for more holding torque
             packetHandler->write2ByteTxRx(
-                portHandler, dxl_id, ADDR_POSITION_P_GAIN, 2500, &dxl_error);  // default is 800, I am attempting to stiffen knees.
+                portHandler, dxl_id, ADDR_POSITION_P_GAIN, 1200, &dxl_error);  // default is 800, I am attempting to stiffen knees.
             packetHandler->write2ByteTxRx(
                 portHandler, dxl_id, ADDR_POSITION_I_GAIN, 0, &dxl_error);
             packetHandler->write2ByteTxRx(
@@ -536,8 +536,8 @@ public:
 
             if(front) {
                 // Increase pose and knee and hip slightly to bring front mass forward.
-                pose[0] += 0.05;
-                pose[1] += 0.05;
+                //pose[0] += 0.05;
+                //pose[1] += 0.05;
             }
 
             if(flip) {
