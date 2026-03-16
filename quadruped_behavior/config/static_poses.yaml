@@ -3,50 +3,38 @@
     standing_pose:
       # Input in order of leg diagram: FL, BL, BR, FR,  Head
       # Knee, Hip, Abad joints for each leg, then head joints
-      # back legs first
       [1.5, 0.9, 0.05,
        1.5, 0.9, 0.05,
       -1.5, 0.9, -0.05, 
       -1.5, 0.9, -0.05,
-      # Head joints: looking forward
       -0.35, 0.0]
 
     lying_pose:
-      # Input in order of leg diagram: FL, BL, BR, FR, Head
       [-0.2,-1.45, 0.0,
       0.35,-1.0, 1.1,
       -0.35,-1.0, -1.1,
       0.2,-1.45, 0.0,
-      # Head joints: looking forward
       0.2, 0.0]
 
     paw_pose:
-      # Input in order of leg diagram: FL, BL, BR, FR, Head
-      # Knee, Hip, Abad joints for each leg, then head joints
-      # back legs first
       [1.5, 0.785, 0.1,
       1.785, 0.675, 0.1,
       -1.785, 0.675, -0.1,
       -1.25, -0.785, -0.25,
-      # Head joints: looking forward
      -0.25, 0.0]
 
     sitting_pose:
-      # Input in order of leg diagram: FL, BL, BR, FR, Head
       [0.785,0.0, 0.0,
       0.9,-0.25, 0.0,
       -0.9,-0.25, 0.0,
       -0.785,0.0, 0.0,
-      # Head joints: looking forward
       -0.1, 0.0]
 
     kneeling_pose:
-      # Input in order of leg diagram: FL, BL, BR, FR, Head
       [-0.2, -1.45, 0.0,
       1.65, 0.9, 0.15,
       -1.65, 0.9, -0.15,
       0.2, -1.45, 0.0,
-      # Head joints: looking forward 
       -1.15, 0.0]
 
     walking_pose_sequence:
@@ -54,17 +42,15 @@
       [1.5, 0.9, 0.0,
       # LIFT UP
       1.70, 0.9, 0.0,
-      # THRUST - push back
+      # THRUST (push back)
       1.5, 0.55, 0.0,
       # LAND and Swing Forwards
       1.5, 0.85, 0.0]
 
+    # I found this works while testing forward walking to walk backwards, (The push off is behind the robot, so it moves backwards)
+    # I may use it in the future to add a backwards gait control.
     walking_backwards_pose_sequence:
-      # STANCE
       [1.5, 1.0, 0.0,
-      # LIFT UP
       1.75, 0.85, 0.0,
-      # THRUST - Push back
       1.4, 0.45, 0.0,
-      # LAND and Swing Forward
       1.5, 0.95, 0.0]

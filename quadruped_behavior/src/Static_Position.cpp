@@ -339,7 +339,7 @@ public:
         int radians_to_ticks(double radians) {
             return static_cast<int32_t>(radians * eticks_per_rad_);
         }
-        // ############################### Begin_Citation [Angle Normalization Function] ###############################
+        // ############################### Begin_Citation [1] ###############################
         // Function to wrap target angle from 0 to 2Pi:
         constexpr double normalize_angle_0_2pi(double rad)
         {
@@ -352,7 +352,7 @@ public:
 
             return rad;
         }
-        // ############################### End_Citation [Angle Normalization Function] ###############################
+        // ############################### End_Citation [1] ###############################
 
         void setupDynamixel(uint8_t dxl_id) {
             int dxl_comm_result = COMM_TX_FAIL;
@@ -497,7 +497,7 @@ public:
 
         void handle_pose_call(std::vector<double> target_joints, std::map<int32_t, int32_t> current_motor_ticks) {
             // Make sure parameters are reset for each call:
-            // ################################## Begin_Citation [Group_Write] #########################
+            // ################################## Begin_Citation [2] #########################
             groupSyncWrite_->clearParam();
         
             for(size_t i = 0; i < motor_ids_.size(); i++) {
@@ -525,20 +525,12 @@ public:
             if (result != COMM_SUCCESS) {
                 RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to send GroupSyncWrite packet: " << packetHandler->getTxRxResult(result));
             }
-            // ################################## End_Citation [Group_Write] #########################  
+            // ################################## End_Citation [2] #########################  
             return;
         }
 
         void process_pose(std::array<double,3> pose, int leg_index) {
             bool flip = (leg_index == BR || leg_index == FR); // Flip knee and abad joints for Right legs
-
-            bool front = (leg_index == FL || leg_index == FR); // Bend the knee more on the front legs to bring COM forward and get more rear push
-
-            if(front) {
-                // Increase pose and knee and hip slightly to bring front mass forward.
-                //pose[0] += 0.05;
-                //pose[1] += 0.05;
-            }
 
             if(flip) {
                 //Flip Knee and abad joints:
