@@ -1,32 +1,33 @@
-Inspiration:
-https://hackaday.com/tag/robot-dog/
-https://hackaday.com/2024/03/15/tops-the-diy-robot-dog-has-great-moves/
-https://github.com/aaedmusa/TOPS
-https://www.petoi.com/blogs/blog/how-to-build-a-robot-dog-step-by-step-guide?srsltid=AfmBOorKcRiqIK4o0yfe45nFwOzC98kTp3HwsnBpoyGIeVBtM-3rphP7
+Code Citations: 
+[1] ChatGPT. "Dynamixel Encoding Questions and Angle Wrapping". Accessed: February, 2026. [Online]. Available: https://chatgpt.com/share/6997d1b9-a3b0-8010-a676-0088e03eb22c
+[2] ChatGPT. "Gait Pattern Debugging and Dynamixel Group Write". Accessed: March, 2026. [Online]. Available: https://chatgpt.com/share/69a7a8f4-ab80-8010-920f-b4226203b85d
 
-Raspberry PI/Electronics:
-https://www.raspberrypi.com/documentation/computers/raspberry-pi.html
-https://www.sparkfun.com/sparkfun-6dof-imu-breakout-ism330dhcx-qwiic.html#content-documentation
-chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://cdn.sparkfun.com/assets/5/4/2/5/7/WG-12S0503-8V.pdf
+Project External Reading References:
+Material Engineering
+[3] Greg Aiosa, "Material Consultation", MSR, Consulted: February 2026.
+[4] Bambulab, “PETG-CF Filament Product Page,” Bambulab, Accessed: February 2026. [Online]. Available: https://us.store.bambulab.com/products/petg-cf?id=41230657945736
+[5] Bambulab, “Filament Comparison Guide,” Bambulab, Accessed: March 2026. [Online]. Available: https://bambulab.com/en-us/filament/guide
 
-Dynamixel:
-https://robotis.us/u2d2/?srsltid=AfmBOopLGOguWMPyAadjFjZ20byv1yxbT8LIXQW48_AwQzuAroEqrV5i
-https://robotis.us/u2d2-power-hub-board-set/?searchid=210883&search_query=power+hub
-https://en.robotis.com/shop_en/item.php?it_id=902-0191-000
-https://tribotix.com/product/6-port-ax-mx-power-hub/
+Robotis Dynamixels
+[6] Robotis, “Robotis U2D2,” Robotis US. Accessed: February 2026. [Online]. Available: https://robotis.us/u2d2/?srsltid=AfmBOopLGOguWMPyAadjFjZ20byv1yxbT8LIXQW48_AwQzuAroEqrV5i
+[7] Robotis, “U2D2 Power Hub Board Set,” Robotis US. Accessed: February 2026. [Online]. Available: https://robotis.us/u2d2-power-hub-board-set/?searchid=210883&search_query=power+hub
+[8] Robotis, “Dynamixe XC430-T240BB-T Series Servo Motors,” Robotis, Accessed: February 2026. [Online]. Available: https://en.robotis.com/shop_en/item.php?it_id=902-0191-000
+[9] Robotis, “Dynamixe 2XC430-W250-T Series Servo Motors,” Robotis, Accessed: February 2026. [Online]. Available: https://en.robotis.com/shop_en/item.php?it_id=902-0157-000
+[10] TriBotix, “6-Port AX/MX Power Hub,” TriBotix. Accessed: February 2026. [Online]. Available: https://tribotix.com/product/6-port-ax-mx-power-hub/
 
-Material Engineering: 
-Consulted: Greg Aiosa
-https://us.store.bambulab.com/products/petg-cf?id=41230657945736
+Raspberry Pi / Electronics
+[11] Raspberry Pi Foundation, “Raspberry Pi Documentation,” Raspberry Pi, Accessed: February, 2026. [Online]. Available: https://www.raspberrypi.com/documentation/computers/raspberry-pi.html
+[12] SparkFun Electronics, “6-DOF IMU Breakout: ISM330DHCX Qwiic,” SparkFun, Accessed: February, 2026. [Online]. Available: https://www.sparkfun.com/sparkfun-6dof-imu-breakout-ism330dhcx-qwiic.html#content-documentation
+[13] SparkFun Electronics, “DC-DC Converter - WG-12S0503-8V Datasheet,” SparkFun, Accessed: February, 2026. [Online]. Available: https://cdn.sparkfun.com/assets/5/4/2/5/7/WG-12S0503-8V.pdf
 
-ROS on Raspberry PI:
-https://docs.ros.org/en/humble/How-To-Guides/Installing-on-Raspberry-Pi.html
-https://chatgpt.com/share/6979a62e-57e4-8010-adfe-f711d6bd331b
+ROS on Raspberry Pi
+[14] ROS DOCS, “ROS 2 on Raspberry Pi,” docs.ros.org, 2026. [Online]. Available: https://docs.ros.org/en/humble/How-To-Guides/Installing-on-Raspberry-Pi.html
 
-Gait Control Methods: 
-https://www.animatornotebook.com/learn/quadrupeds-gaits
-https://moribots.github.io/
+Gait Control Methods
+[15] Animator Notebook, “A GUIDE TO QUADRUPEDS’ GAITS - Walk, amble, trot, pace, canter, gallop,” Accessed: March, 2026. [Online]. Available: https://www.animatornotebook.com/learn/quadrupeds-gaits
+[16] Maurice Rahme, “Spot Mini Mini,” Accessed: February, 2026. [Online]. Available: https://moribots.github.io/
 
-Code: 
-[Angle Normalization Function] https://chatgpt.com/share/6997d1b9-a3b0-8010-a676-0088e03eb22c
-[Dynamixel Group Write] https://chatgpt.com/share/69a7a8f4-ab80-8010-920f-b4226203b85d
+Project Inspiration
+[17] Hackaday, “Robot Dog Projects,” Hackaday, Accessed: January, 2026. [Online]. Available: https://hackaday.com/tag/robot-dog/
+[18] Hackaday, “TOPS: The DIY Robot Dog Has Great Moves,” Hackaday, Accessed: January, 2026. [Online]. Available: https://hackaday.com/2024/03/15/tops-the-diy-robot-dog-has-great-moves/
+[19] Petoi, “How to Build a Robot Dog: Step-by-Step Guide,” Petoi, Accessed: January, 2026. [Online]. Available: https://www.petoi.com/blogs/blog/how-to-build-a-robot-dog-step-by-step-guide?srsltid=AfmBOorKcRiqIK4o0yfe45nFwOzC98kTp3HwsnBpoyGIeVBtM-3rphP7
