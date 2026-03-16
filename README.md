@@ -1,8 +1,32 @@
 # 🐾 Meet Rudy!
 
-Executables: 
+## Executables: 
+
+~ Gait Control/Static Poses: Using static_poses.launch.xml use_rvix:=false, you can launch the dynamixel interface for Rudy and send service calls to the robot to change its joint orientation or command it to walk.
 
 ~ Calibration: Using calibrate.launch.xml, you can read the encoder positions at a zero'd joint positions to calibrate each motors encoding to a joint position of 0.
+
+~ Rviz Visualization: Using launch_rudy.launch.xml, you can visualize Rudy in simulation at the zero'd joint positions (legs straight down).
+
+## Packages:
+
+- **quadruped_behavior**
+  - Implements the **trot gait controller**
+  - Generates waypoint trajectories and handles ROS communication
+  - Implements whole body static pose joint control
+  - Future gait generation progress will be implemented in this package
+
+- **rudy_description**
+  - Contains the **URDF model** for the robot
+  - Provides tools for **URDF loading and RViz visualization**
+
+- **rudy_lib**
+  - Defines **leg and body kinematics**
+  - Utilities for **kinematics calculations**
+  - **Unit Tests** for leg and body kinematics
+
+- **dynamixel_interfaces**
+  - Future Package to move all dynamixel logic to its own package
 
 ---
 
@@ -22,28 +46,26 @@ Rudy is a small quadruped robot that I have designed and begun building complete
 
 Each leg was designed with:
 
-- **Two degrees of freedom at the hip:**
-  - Abduction / Adduction  
-  - Flexion / Extension  
+- Two degrees of freedom at each hip:
+  - Abduction/adduction **(15-deg Abd / 65-deg add)**
+    - Hip Abad was included to support center-of-mass shifting and balance for future advanced gait control methods.
+  - Flexion/extension   **(90-deg Flex/Ext)**
 
-- **One degree of freedom at the knee:**
-  - Flexion / Extension  
-
-Hip abduction was intentionally included to enable:
-
-- Center-of-mass shifting  
-- Improved balance during locomotion  
-- Future dynamic gait stability  
+- One degree of freedom at each knee:
+  - Flexion/extension **(112-deg Flex/Ext)**
 
 ---
 
 # Project Vision
 
-Rudy is intended to evolve into a fully capable research and experimentation platform for:
+Rudy is intended to evolve into a fully capable research and experimentation robotic platform for:
 
-- Legged locomotion control  
-- Gait generation and optimization  
+- Legged locomotion control & Gait generation
 - ROS-based robotics architecture  
 - Balance and COM shifting strategies  
 
-This project represents a complete ground-up robotics system spanning mechanical, electrical, and software design. I chode to do this build to deepen my expertise in integrated robotic systems design.
+--- 
+
+**Feel free to check out my project portfolio for additional videos on project Rudy**
+
+https://ncknight-un.github.io/2026/03/10/Rudy-Quadruped-From-Scratch/
