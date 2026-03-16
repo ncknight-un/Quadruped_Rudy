@@ -26,8 +26,9 @@ ROS on Raspberry Pi
 Gait Control Methods
 [15] Animator Notebook, “A GUIDE TO QUADRUPEDS’ GAITS - Walk, amble, trot, pace, canter, gallop,” Accessed: March, 2026. [Online]. Available: https://www.animatornotebook.com/learn/quadrupeds-gaits
 [16] Maurice Rahme, “Spot Mini Mini,” Accessed: February, 2026. [Online]. Available: https://moribots.github.io/
+[17] aaedmusa, "TOPS," Accessed: February 2026. [Online]. Available: https://github.com/aaedmusa/TOPS
 
 Project Inspiration
-[17] Hackaday, “Robot Dog Projects,” Hackaday, Accessed: January, 2026. [Online]. Available: https://hackaday.com/tag/robot-dog/
-[18] Hackaday, “TOPS: The DIY Robot Dog Has Great Moves,” Hackaday, Accessed: January, 2026. [Online]. Available: https://hackaday.com/2024/03/15/tops-the-diy-robot-dog-has-great-moves/
-[19] Petoi, “How to Build a Robot Dog: Step-by-Step Guide,” Petoi, Accessed: January, 2026. [Online]. Available: https://www.petoi.com/blogs/blog/how-to-build-a-robot-dog-step-by-step-guide?srsltid=AfmBOorKcRiqIK4o0yfe45nFwOzC98kTp3HwsnBpoyGIeVBtM-3rphP7
+[18] Hackaday, “Robot Dog Projects,” Hackaday, Accessed: January, 2026. [Online]. Available: https://hackaday.com/tag/robot-dog/
+[19] Hackaday, “TOPS: The DIY Robot Dog Has Great Moves,” Hackaday, Accessed: January, 2026. [Online]. Available: https://hackaday.com/2024/03/15/tops-the-diy-robot-dog-has-great-moves/
+[20] Petoi, “How to Build a Robot Dog: Step-by-Step Guide,” Petoi, Accessed: January, 2026. [Online]. Available: https://www.petoi.com/blogs/blog/how-to-build-a-robot-dog-step-by-step-guide?srsltid=AfmBOorKcRiqIK4o0yfe45nFwOzC98kTp3HwsnBpoyGIeVBtM-3rphP7
