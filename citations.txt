@@ -32,3 +32,6 @@ Project Inspiration
 [18] Hackaday, “Robot Dog Projects,” Hackaday, Accessed: January, 2026. [Online]. Available: https://hackaday.com/tag/robot-dog/
 [19] Hackaday, “TOPS: The DIY Robot Dog Has Great Moves,” Hackaday, Accessed: January, 2026. [Online]. Available: https://hackaday.com/2024/03/15/tops-the-diy-robot-dog-has-great-moves/
 [20] Petoi, “How to Build a Robot Dog: Step-by-Step Guide,” Petoi, Accessed: January, 2026. [Online]. Available: https://www.petoi.com/blogs/blog/how-to-build-a-robot-dog-step-by-step-guide?srsltid=AfmBOorKcRiqIK4o0yfe45nFwOzC98kTp3HwsnBpoyGIeVBtM-3rphP7
+
+Animation 
+[21] Claude. "Developing Simulation for Kinematic Model". Accessed: April 15th, 2026. [Online]. Available: https://claude.ai/share/9cb5ff89-9d32-4ea0-896f-fa7d2c779131
